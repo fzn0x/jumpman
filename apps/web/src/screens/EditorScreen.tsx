@@ -287,7 +287,7 @@ export function EditorScreen({
           className={cx(
             'flex flex-col border-white/5 bg-ink',
             desktop
-              ? 'w-[380px] border-l'
+              ? 'w-[400px] border-l'
               : 'h-[50dvh] shrink-0 rounded-t-[28px] border-t bg-ink-2/40',
           )}
           aria-label="Editing panel"
