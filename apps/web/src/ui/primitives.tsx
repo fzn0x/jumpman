@@ -149,7 +149,7 @@ export function Switch({
       >
         <span
           className={cx(
-            'absolute top-0.5 size-6 rounded-full bg-white shadow transition-transform duration-200 ease-snap',
+            'absolute top-0.5 left-0 size-6 rounded-full bg-white shadow transition-transform duration-200 ease-snap',
             checked ? 'translate-x-[22px]' : 'translate-x-0.5',
           )}
         />
