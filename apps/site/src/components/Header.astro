@@ -1,0 +1,259 @@
+---
+import { links, withBase } from '../lib/site'
+import Icon from './Icon.astro'
+
+const nav = [
+  { label: 'Features', href: links.features },
+  { label: 'Presets', href: links.presets },
+  { label: 'Install', href: links.install },
+]
+const current = Astro.url.pathname
+---
+
+<header class="site-header">
+  <div class="container bar">
+    <a class="brand" href={links.home} aria-label="Jumpman home">
+      <img src={withBase('logo.svg')} alt="Jumpman" width="152" height="34" />
+    </a>
+
+    <nav class="nav" aria-label="Main">
+      <ul role="list">
+        {
+          nav.map((item) => (
+            <li>
+              <a href={item.href} aria-current={item.href === current ? 'page' : undefined}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+        <li>
+          <a href={links.repo} rel="noopener">
+            <Icon name="github" size={18} />
+            GitHub
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="actions">
+      <a class="btn btn--primary cta" href={links.app}>Open web app</a>
+      <details class="menu" data-menu>
+        <summary aria-label="Menu">
+          <Icon name="menu" class="i-open" />
+          <Icon name="close" class="i-close" />
+        </summary>
+        <nav class="menu-panel dark" aria-label="Mobile">
+          <ul role="list">
+            {
+              nav.map((item) => (
+                <li>
+                  <a href={item.href}>{item.label}</a>
+                </li>
+              ))
+            }
+            <li>
+              <a href={links.repo} rel="noopener">
+                GitHub <Icon name="arrow-up-right" size={18} />
+              </a>
+            </li>
+            <li>
+              <a href={links.releases} rel="noopener">
+                Download for Android <Icon name="arrow-up-right" size={18} />
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </details>
+    </div>
+  </div>
+</header>
+
+<script is:inline>
+  {
+    const menu = document.querySelector('[data-menu]')
+    if (menu) {
+      menu.addEventListener('click', (e) => {
+        if (e.target instanceof Element && e.target.closest('a')) menu.open = false
+      })
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && menu.open) {
+          menu.open = false
+          menu.querySelector('summary')?.focus()
+        }
+      })
+    }
+  }
+</script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--salmon);
+    border-bottom: 1px solid rgb(28 28 30 / 0.1);
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-height: var(--header-h);
+  }
+
+  .brand {
+    display: block;
+    flex: none;
+    border-radius: 0.5rem;
+  }
+
+  .brand img {
+    width: auto;
+    height: 2.125rem;
+  }
+
+  .nav {
+    margin-inline-start: auto;
+  }
+
+  .nav ul {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: 999px;
+    font-weight: 550;
+    font-size: 0.975rem;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+  }
+
+  .nav a:hover,
+  .nav a[aria-current='page'] {
+    background: rgb(28 28 30 / 0.08);
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .cta {
+    min-height: 2.75rem;
+    padding-inline: 1.15em;
+    font-size: 0.95rem;
+  }
+
+  .menu {
+    position: relative;
+    display: none;
+  }
+
+  .menu summary {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--white);
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .menu summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .menu summary :global(svg) {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .menu :global(.i-close),
+  .menu[open] :global(.i-open) {
+    display: none;
+  }
+
+  .menu[open] :global(.i-close) {
+    display: block;
+  }
+
+  .menu-panel {
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    right: 0;
+    width: min(18rem, calc(100vw - 2 * var(--gutter)));
+    padding: 0.5rem;
+    border-radius: 1.25rem;
+    box-shadow:
+      0 24px 48px -12px rgb(40 0 0 / 0.45),
+      0 4px 12px rgb(40 0 0 / 0.15);
+    transform-origin: top right;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .menu[open] .menu-panel {
+      animation: menu-in 0.35s var(--ease-out);
+    }
+  }
+
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      scale: 0.96;
+      translate: 0 -0.25rem;
+    }
+  }
+
+  .menu-panel a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1rem;
+    border-radius: 0.85rem;
+    font-weight: 550;
+    text-decoration: none;
+  }
+
+  .menu-panel a:hover {
+    background: var(--ink-raised);
+  }
+
+  .menu-panel :global(svg) {
+    color: var(--gray);
+  }
+
+  @media (max-width: 52rem) {
+    .nav {
+      display: none;
+    }
+
+    .actions {
+      margin-inline-start: auto;
+    }
+
+    .menu {
+      display: block;
+    }
+  }
+
+  @media (max-width: 24rem) {
+    .brand img {
+      height: 1.75rem;
+    }
+
+    .cta {
+      padding-inline: 0.9em;
+      font-size: 0.9rem;
+    }
+  }
+</style>

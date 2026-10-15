@@ -1,0 +1,160 @@
+---
+import { links, withBase } from '../lib/site'
+
+const year = new Date().getFullYear()
+
+const columns = [
+  {
+    title: 'Product',
+    items: [
+      { label: 'Open the web app', href: links.app },
+      { label: 'Features', href: links.features },
+      { label: 'Install', href: links.install },
+      { label: 'Download for Android', href: links.releases, external: true },
+    ],
+  },
+  {
+    title: 'Presets',
+    items: [
+      { label: 'Preset gallery', href: links.presets },
+      { label: 'Share your preset', href: links.communityPresets, external: true },
+      { label: 'Gallery JSON', href: links.galleryJson },
+    ],
+  },
+  {
+    title: 'Project',
+    items: [
+      { label: 'GitHub', href: links.repo, external: true },
+      { label: 'Releases', href: links.releases, external: true },
+      { label: 'Contributing', href: links.contributing, external: true },
+      { label: 'Report an issue', href: links.issues, external: true },
+    ],
+  },
+]
+---
+
+<footer class="site-footer dark">
+  <div class="container">
+    <div class="top">
+      <div class="about">
+        <a class="brand" href={links.home} aria-label="Jumpman home">
+          <img src={withBase('logo-white.svg')} alt="Jumpman" width="179" height="40" loading="lazy" />
+        </a>
+        <p>
+          The open-source batch photo editor. Edit multiple photos at once, offline, on any device.
+        </p>
+      </div>
+      {
+        columns.map((col) => (
+          <nav class="col" aria-label={col.title}>
+            <h2>{col.title}</h2>
+            <ul role="list">
+              {col.items.map((item) => (
+                <li>
+                  <a href={item.href} rel={'external' in item && item.external ? 'noopener' : undefined}>
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))
+      }
+    </div>
+    <div class="ticks" aria-hidden="true"></div>
+    <div class="bottom">
+      <p>
+        © {year} fzn0x and Jumpman contributors. Released under the <a href={links.license} rel="noopener"
+          >MIT License</a
+        >.
+      </p>
+      <p>No cookies, no tracking on this site. Your photos never leave your device.</p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    padding-block: clamp(3.5rem, 2.5rem + 4vw, 6rem) 2rem;
+  }
+
+  .top {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr));
+    gap: 2.5rem;
+    padding-bottom: 3rem;
+  }
+
+  .brand {
+    display: inline-block;
+    border-radius: 0.5rem;
+  }
+
+  .brand img {
+    width: auto;
+    height: 2.5rem;
+  }
+
+  .about p {
+    margin-top: 1.25rem;
+    max-width: 22rem;
+    color: var(--gray);
+    font-size: 0.975rem;
+  }
+
+  h2 {
+    margin-bottom: 1rem;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.4;
+    color: var(--gray);
+  }
+
+  ul {
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .col a {
+    color: var(--white);
+    font-size: 0.975rem;
+    text-decoration: none;
+  }
+
+  .col a:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--salmon);
+  }
+
+  .bottom {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.75rem 2rem;
+    padding-top: 1.5rem;
+    color: var(--gray);
+    font-size: 0.875rem;
+  }
+
+  .bottom a {
+    color: var(--white);
+  }
+
+  @media (max-width: 56rem) {
+    .top {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .about {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 30rem) {
+    .top {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>
