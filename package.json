@@ -1,0 +1,26 @@
+{
+  "name": "jumpman",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Edit multiple photos at once. Open-source, offline-first batch photo editor for web and mobile.",
+  "type": "module",
+  "license": "MIT",
+  "author": "fzn0x",
+  "homepage": "https://fzn0x.github.io/jumpman/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fzn0x/jumpman.git"
+  },
+  "bugs": "https://github.com/fzn0x/jumpman/issues",
+  "packageManager": "pnpm@10.29.3",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @jumpman/web dev",
+    "dev:site": "pnpm --filter @jumpman/site dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  }
+}
