@@ -156,7 +156,8 @@ export class GLRenderer {
   private imageSize = { w: 0, h: 0 }
   private lutTextures = new Map<Lut3D, WebGLTexture>()
   private curveTex: WebGLTexture | null = null
-  private targets: Target[] = []
+  /** Indexed by slot (0 original, 1-2 ping-pong, 3 readback); unused slots stay empty. */
+  private targets: (Target | undefined)[] = []
   private lastOutput: Target | null = null
   private quad: WebGLVertexArrayObject | null = null
   private lost = false
@@ -577,6 +578,7 @@ export class GLRenderer {
   dispose(loseContext = true): void {
     const gl = this.gl
     for (const t of this.targets) {
+      if (!t) continue
       gl.deleteFramebuffer(t.fb)
       gl.deleteTexture(t.tex)
     }
