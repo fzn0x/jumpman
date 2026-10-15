@@ -1,0 +1,99 @@
+---
+import Icon from '../components/Icon.astro'
+import Base from '../layouts/Base.astro'
+import { links } from '../lib/site'
+---
+
+<Base
+  title="Page not found | Jumpman"
+  description="This page doesn’t exist. Head back to Jumpman, the free, open-source batch photo editor."
+  noindex
+>
+  <section class="lost" aria-labelledby="lost-title">
+    <div class="container inner">
+      <p class="code" aria-hidden="true">
+        <span>4</span><span class="slot"></span><span>4</span>
+      </p>
+      <h1 id="lost-title" class="display-l">This page didn’t make the batch.</h1>
+      <p class="lead">
+        The link may be old, or the page has moved. Your photos are fine. Here’s where you probably meant
+        to go.
+      </p>
+      <div class="ctas">
+        <a class="btn btn--primary btn--lg" href={links.home}>
+          Back to the home page
+          <Icon name="arrow-right" />
+        </a>
+        <a class="btn btn--lg" href={links.presets}>Browse presets</a>
+        <a class="btn btn--ghost btn--lg" href={links.app}>Open the web app</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .lost {
+    min-height: calc(100svh - var(--header-h));
+    display: grid;
+    align-items: center;
+    padding-block: clamp(3rem, 2rem + 5vw, 6rem);
+  }
+
+  .inner {
+    display: grid;
+    justify-items: start;
+    gap: 1.5rem;
+  }
+
+  .code {
+    display: flex;
+    align-items: center;
+    gap: 0.06em;
+    color: var(--white);
+    font: 800 clamp(6rem, 3rem + 14vw, 14rem) / 0.85 var(--font-display);
+    letter-spacing: -0.05em;
+  }
+
+  .slot {
+    width: 0.62em;
+    height: 0.78em;
+    margin-inline: 0.04em;
+    border: 0.045em dashed var(--ink);
+    border-radius: 0.12em;
+    rotate: 8deg;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .slot {
+      animation: wobble 1.4s var(--ease-out) 0.2s both;
+    }
+  }
+
+  @keyframes wobble {
+    from {
+      rotate: -14deg;
+      translate: 0 -0.08em;
+    }
+  }
+
+  h1 {
+    max-width: 14ch;
+  }
+
+  .lead {
+    color: var(--ink);
+  }
+
+  .ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  @media (max-width: 30rem) {
+    .ctas .btn {
+      flex: 1 1 100%;
+    }
+  }
+</style>
