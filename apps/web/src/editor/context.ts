@@ -122,11 +122,26 @@ export function ensureLayer<K extends LayerKind>(
   kind: K,
   init?: Partial<LayerOf<K>>,
 ): LayerOf<K> {
-  const existing = targetLayer(ctx, kind)
+  const existing = targetLayer(ctx, kind) ?? latestLayerOfKind(ctx, kind)
   if (existing) return existing
   const layer = createLayer(kind, init as Parameters<typeof createLayer<K>>[1])
   run(ctx, { type: 'addLayer', layer, scope: ctx.scope })
   return layer
+}
+
+/** Looks at the live store, so rapid events never create the same layer twice. */
+function latestLayerOfKind<K extends LayerKind>(ctx: BatchContext, kind: K): LayerOf<K> | null {
+  const batch = useLibrary.getState().batches[ctx.batch.id]
+  if (!batch) return null
+  const branch = activeBranch(batch)
+  const own =
+    ctx.mode === 'individual' && ctx.current
+      ? branch.photos[ctx.current.id]?.override.layers?.find(
+          (l) => l.kind === kind && !l.proposedBy,
+        )
+      : undefined
+  const found = own ?? branch.global.layers.find((l) => l.kind === kind && !l.proposedBy)
+  return (found as LayerOf<K> | undefined) ?? null
 }
 
 export function baseLayerExists(ctx: BatchContext): boolean {
