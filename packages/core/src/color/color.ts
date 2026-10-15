@@ -88,8 +88,8 @@ export function oklabToLinear(lab: RGB): RGB {
   ]
 }
 
-const TEMP_K = 0.32
-const TINT_K = 0.22
+export const TEMP_K = 0.45
+export const TINT_K = 0.22
 
 /**
  * Linear-light channel gains for the temperature/tint sliders (-100..100).
