@@ -1,5 +1,5 @@
 import { forkPreset, type Preset, parsePreset, presetLayers } from '@jumpman/core'
-import { ArrowLeft, Download, GitFork, Link2, Loader2, Plus, Trash2, Wand2 } from 'lucide-react'
+import { ArrowLeft, Download, GitFork, Link2, Plus, Trash2, Wand2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { TopBar } from '../components/Chrome.tsx'
 import { RenderCanvas } from '../components/EditedThumb.tsx'
@@ -20,6 +20,20 @@ import { navigate } from '../state/router.ts'
 import { Button, cx, Empty, IconButton, Segmented } from '../ui/primitives.tsx'
 
 const GALLERY_URL = 'https://fzn0x.github.io/jumpman/presets/index.json'
+
+/** Community presets bundled at build time, so the gallery also works offline. */
+const BUNDLED: Preset[] = Object.values(
+  import.meta.glob<unknown>('../../../../community/presets/*.json', {
+    eager: true,
+    import: 'default',
+  }),
+).flatMap((raw) => {
+  try {
+    return [parsePreset(raw)]
+  } catch {
+    return []
+  }
+})
 
 function galleryUrls(): string[] {
   const urls: string[] = []
@@ -197,17 +211,24 @@ export function PresetCard({
 export function PresetsScreen() {
   const mine = useLibrary((s) => s.presets)
   const [tab, setTab] = useState<'community' | 'mine' | 'builtin'>('community')
-  const [gallery, setGallery] = useState<Preset[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [gallery, setGallery] = useState<Preset[]>(BUNDLED)
+  const [fetched, setFetched] = useState(false)
   const { photos, batchId } = usePreviewPhotos()
   useEffect(() => {
-    if (tab !== 'community' || gallery) return
+    if (tab !== 'community' || fetched) return
+    setFetched(true)
     fetchGallery()
-      .then(setGallery)
-      .catch((e: Error) => setError(e.message))
-  }, [tab, gallery])
+      .then((remote) => {
+        // Remote presets win; bundled ones fill the gaps.
+        const ids = new Set(remote.map((p) => p.id))
+        setGallery([...remote, ...BUNDLED.filter((p) => !ids.has(p.id))])
+      })
+      .catch(() => {
+        // Offline: keep the bundled gallery.
+      })
+  }, [tab, fetched])
 
-  const list = tab === 'mine' ? mine : tab === 'builtin' ? BUILTIN_PRESETS : (gallery ?? [])
+  const list = tab === 'mine' ? mine : tab === 'builtin' ? BUILTIN_PRESETS : gallery
   return (
     <div className="min-h-full pb-16">
       <TopBar
@@ -267,16 +288,6 @@ export function PresetsScreen() {
             </a>
             .
           </p>
-        )}
-        {tab === 'community' && !gallery && !error && (
-          <div className="mt-10 flex justify-center text-mute">
-            <Loader2 className="size-6 animate-spin" />
-          </div>
-        )}
-        {tab === 'community' && error && (
-          <Empty icon={Link2} title="The community gallery is offline">
-            Check your connection and try again. Your own and built-in presets still work offline.
-          </Empty>
         )}
         {tab === 'mine' && !mine.length && (
           <Empty icon={Plus} title="No presets yet">
