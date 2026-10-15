@@ -1,0 +1,165 @@
+---
+import { builtWith } from '../data/features'
+import { links } from '../lib/site'
+import Icon, { type IconName } from './Icon.astro'
+
+const points: { icon: IconName; title: string; text: string }[] = [
+  {
+    icon: 'shield',
+    title: 'On your device, by design',
+    text: 'Photos are decoded and edited with WebGL2 right in your browser. There is no upload step, because there is no server to upload to.',
+  },
+  {
+    icon: 'wifi-off',
+    title: 'Works offline',
+    text: 'Jumpman is a progressive web app that keeps collections, presets and history in IndexedDB. Install it once and keep editing on a plane.',
+  },
+  {
+    icon: 'github',
+    title: 'Open source, MIT licensed',
+    text: 'Read every line, fork it, or host it yourself. No account, no subscription, no lock-in.',
+  },
+]
+---
+
+<section class="privacy dark" id="privacy" aria-labelledby="privacy-title">
+  <div class="container grid">
+    <div class="statement">
+      <h2 id="privacy-title" class="display-l">
+        Your photos <span class="accent">never</span> leave your device.
+      </h2>
+      <a class="btn btn--ghost" href={links.repo} rel="noopener">
+        <Icon name="github" />
+        Read the source
+      </a>
+    </div>
+
+    <div class="detail">
+      <ul class="points" role="list">
+        {
+          points.map((p) => (
+            <li>
+              <span class="icon">
+                <Icon name={p.icon} />
+              </span>
+              <div>
+                <h3>{p.title}</h3>
+                <p>{p.text}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+
+      <div class="built">
+        <h3 class="built-title">Built with</h3>
+        <ul class="chips" role="list">
+          {
+            builtWith.map((tech) => (
+              <li class="chip">{tech}</li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .privacy {
+    padding-block: clamp(4.5rem, 3rem + 7vw, 9rem);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2.5rem, 2rem + 4vw, 6rem);
+    align-items: start;
+  }
+
+  .statement {
+    position: sticky;
+    top: calc(var(--header-h) + 2rem);
+    display: grid;
+    justify-items: start;
+    gap: 2rem;
+  }
+
+  .accent {
+    color: var(--red);
+  }
+
+  .points {
+    display: grid;
+  }
+
+  .points li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 1.25rem;
+    padding-block: 1.75rem;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .points li:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .icon {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.9rem;
+    background: var(--ink-raised);
+    color: var(--salmon);
+  }
+
+  .points h3 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  .points p {
+    margin-top: 0.5rem;
+    color: var(--mist);
+  }
+
+  .built {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+    background: var(--ink-raised);
+  }
+
+  .built-title {
+    margin-bottom: 1rem;
+    color: var(--gray);
+    font: 600 0.875rem / 1.4 var(--font-body);
+    letter-spacing: 0.01em;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .chips .chip {
+    background: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--ink-line);
+  }
+
+  @media (max-width: 56rem) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .statement {
+      position: static;
+    }
+  }
+</style>
