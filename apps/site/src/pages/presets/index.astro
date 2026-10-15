@@ -78,8 +78,10 @@ const presets = loadCommunityPresets().map((preset) => ({
                 )}
               </div>
               <div class="foot">
-                <a class="btn btn--primary" href={href} aria-label={`Try ${preset.name} in Jumpman`}>
-                  Try in Jumpman
+                <a class="btn btn--primary" href={href}>
+                  <span>
+                    Try in Jumpman<span class="visually-hidden">: {preset.name}</span>
+                  </span>
                   <Icon name="arrow-right" />
                 </a>
               </div>
