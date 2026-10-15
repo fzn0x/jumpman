@@ -12,7 +12,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "build:android": "vite build && cap sync android",
     "android": "cap open android",
-    "android:assets": "npx @capacitor/assets@3.0.5 generate --android --iconBackgroundColor \"#1C1C1E\" --iconBackgroundColorDark \"#1C1C1E\" --splashBackgroundColor \"#1C1C1E\" --splashBackgroundColorDark \"#1C1C1E\""
+    "android:assets": "npx @capacitor/assets@3.0.5 generate --android --iconBackgroundColor \"#1C1C1E\" --iconBackgroundColorDark \"#1C1C1E\" --splashBackgroundColor \"#1C1C1E\" --splashBackgroundColorDark \"#1C1C1E\"",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
@@ -34,6 +35,7 @@
   "devDependencies": {
     "@babel/core": "^8.0.7",
     "@capacitor/cli": "^8.5.3",
+    "@playwright/test": "^1.64.0",
     "@rolldown/plugin-babel": "^0.2.4",
     "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.3.0",
