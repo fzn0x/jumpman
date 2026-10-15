@@ -1,0 +1,45 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Import 12 JPEGs into a collection
+        2. Select all and tap "Edit these images"
+        3. ...
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Web (desktop)
+        - Web (phone or tablet)
+        - Installed PWA
+        - Android app
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser / OS / device
+      placeholder: Chrome on Windows 11, Pixel 8 with Android 16, ...
+  - type: input
+    id: version
+    attributes:
+      label: Jumpman version
+      description: Shown in Settings → About.
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or files
+      description: Screenshots help a lot. Please don't attach private photos.
