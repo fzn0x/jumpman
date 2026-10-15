@@ -1,0 +1,56 @@
+{
+  "collection": "Spring Pink",
+  "license": "Unsplash License (https://unsplash.com/license)",
+  "photos": [
+    {
+      "file": "01-blossom-branch.jpg",
+      "author": "Alejandro Escamilla",
+      "source": "https://unsplash.com/photos/Iuq0EL4EINY"
+    },
+    {
+      "file": "02-pink-blossoms.jpg",
+      "author": "Rula Sibai",
+      "source": "https://unsplash.com/photos/-vq7mi4oF0s"
+    },
+    {
+      "file": "03-garden-roses.jpg",
+      "author": "Arvee Marie",
+      "source": "https://unsplash.com/photos/YnfGtpt2gf4"
+    },
+    {
+      "file": "04-sunglasses.jpg",
+      "author": "Alexander Shustov",
+      "source": "https://unsplash.com/photos/AHBiSKaENwc"
+    },
+    {
+      "file": "05-golden-hour.jpg",
+      "author": "Alexander Shustov",
+      "source": "https://unsplash.com/photos/2FrX56QL7P8"
+    },
+    {
+      "file": "06-bench-couple.jpg",
+      "author": "Charlie Foster",
+      "source": "https://unsplash.com/photos/A88emaZe7d8"
+    },
+    {
+      "file": "07-pier.jpg",
+      "author": "May Pamintuan",
+      "source": "https://unsplash.com/photos/j9nfqTi5T5o"
+    },
+    {
+      "file": "08-raspberries.jpg",
+      "author": "Ben Moore",
+      "source": "https://unsplash.com/photos/pJILiyPdrXI"
+    },
+    {
+      "file": "09-petunias.jpg",
+      "author": "Steven Spassov",
+      "source": "https://unsplash.com/photos/tVIqMgGlAG0"
+    },
+    {
+      "file": "10-dandelion.jpg",
+      "author": "Coley Christine",
+      "source": "https://unsplash.com/photos/GyvMk5pPDXI"
+    }
+  ]
+}
