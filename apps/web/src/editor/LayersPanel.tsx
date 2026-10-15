@@ -84,10 +84,10 @@ export function defaultMask(type: MaskType, ctx: BatchContext): Mask {
 }
 
 function describe(layer: Layer): string {
-  const parts = [LAYER_LABELS[layer.kind]]
+  const parts = layer.name === LAYER_LABELS[layer.kind] ? [] : [LAYER_LABELS[layer.kind]]
   if (layer.opacity < 1) parts.push(`${Math.round(layer.opacity * 100)}%`)
   if (layer.mask) parts.push(`${MASK_LABELS[layer.mask.type]} mask`)
-  return parts.join(' · ')
+  return parts.join(' · ') || 'Whole photo'
 }
 
 function MaskEditor({ ctx, layer, own }: { ctx: BatchContext; layer: Layer; own: boolean }) {
