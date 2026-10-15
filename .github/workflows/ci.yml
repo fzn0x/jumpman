@@ -39,3 +39,25 @@ jobs:
         run: pnpm presets:validate
       - name: Build web app and site
         run: pnpm build
+
+  e2e:
+    name: Browser tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @jumpman/web exec playwright install --with-deps chromium
+      - name: End-to-end and renderer parity tests
+        run: pnpm --filter @jumpman/web test:e2e
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/test-results
+          retention-days: 7
