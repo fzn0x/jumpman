@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { BASIC_KEYS, basicSpec } from '../model/basic.ts'
-import { describeToEdit } from './describe.ts'
+import { BASIC_KEYS, basicSpec, defaultBasic } from '../model/basic.ts'
+import { describeEditInWords, describeToEdit } from './describe.ts'
 import { LEXICON, MODIFIERS } from './lexicon.ts'
 
 const phrasesOf = (text: string) => describeToEdit(text).matched.map((m) => m.phrase)
@@ -292,5 +292,58 @@ describe('lexicon coverage', () => {
   it('folds accents and curly apostrophes', () => {
     expect(describeToEdit('Vívid').basic).toEqual(describeToEdit('vivid').basic)
     expect(describeToEdit('don’t add grain, film').basic.grain).toBeUndefined()
+  })
+})
+
+describe('describeEditInWords', () => {
+  it('returns an empty string for default edits', () => {
+    expect(describeEditInWords({})).toBe('')
+    expect(describeEditInWords(defaultBasic())).toBe('')
+    expect(describeEditInWords({ temperature: 3, fade: 2 })).toBe('')
+  })
+
+  it('describes sliders in a stable order with graded wording', () => {
+    expect(describeEditInWords({ fade: 8, contrast: -20, exposure: 0.3, temperature: 20 })).toBe(
+      'warm, bright, low contrast, slightly faded',
+    )
+    expect(describeEditInWords({ temperature: 8 })).toBe('slightly warm')
+    expect(describeEditInWords({ temperature: 40 })).toBe('very warm')
+    expect(describeEditInWords({ temperature: -20, vignette: -40 })).toBe('cool, strong vignette')
+    expect(describeEditInWords({ saturation: -100, contrast: 20 })).toBe(
+      'high contrast, black and white',
+    )
+  })
+
+  it('round-trips with describeToEdit', () => {
+    const words = describeEditInWords(describeToEdit('warm and bright').basic)
+    expect(words).toContain('warm')
+    expect(words).toContain('bright')
+    for (const word of [
+      'warm',
+      'slightly warm',
+      'very warm',
+      'cool',
+      'magenta tint',
+      'green tint',
+      'bright',
+      'dark',
+      'high contrast',
+      'low contrast',
+      'vivid',
+      'muted',
+      'black and white',
+      'soft highlights',
+      'lifted shadows',
+      'deep shadows',
+      'bright whites',
+      'lifted blacks',
+      'crushed blacks',
+      'faded',
+      'slightly faded',
+      'grainy',
+      'vignette',
+    ]) {
+      expect(describeEditInWords(describeToEdit(word).basic), word).toBe(word)
+    }
   })
 })

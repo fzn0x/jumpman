@@ -400,3 +400,97 @@ export function describeToEdit(text: string): DescribeResult {
     unmatched,
   }
 }
+
+/** Slight, plain and strong wording for one direction of a slider. */
+type Forms = readonly [string, string, string]
+type Describer = (b: Partial<Basic>) => string | undefined
+
+/** Below this share of a plain word's change, a slider is not worth mentioning. */
+const MIN_RATIO = 0.3
+
+/** `unit` is the change a plain word makes, so words read back roughly as they were typed. */
+const graded =
+  (value: (b: Partial<Basic>) => number, unit: number, up: Forms, down?: Forms): Describer =>
+  (b) => {
+    const v = value(b)
+    const ratio = Math.abs(v) / unit
+    if (!(ratio >= MIN_RATIO)) return undefined
+    return (v > 0 ? up : down)?.[ratio < 0.65 ? 0 : ratio < 1.5 ? 1 : 2]
+  }
+
+const colorfulness = graded(
+  (b) => (b.saturation ?? 0) + (b.vibrance ?? 0) * 0.5,
+  20,
+  ['slightly vivid', 'vivid', 'very vivid'],
+  ['slightly muted', 'muted', 'very muted'],
+)
+
+const DESCRIBERS: readonly Describer[] = [
+  graded(
+    (b) => b.temperature ?? 0,
+    20,
+    ['slightly warm', 'warm', 'very warm'],
+    ['slightly cool', 'cool', 'very cool'],
+  ),
+  graded(
+    (b) => b.tint ?? 0,
+    15,
+    ['slight magenta tint', 'magenta tint', 'strong magenta tint'],
+    ['slight green tint', 'green tint', 'strong green tint'],
+  ),
+  graded(
+    (b) => (b.exposure ?? 0) * 50 + (b.brightness ?? 0) * 0.5,
+    15,
+    ['slightly bright', 'bright', 'very bright'],
+    ['slightly dark', 'dark', 'very dark'],
+  ),
+  graded(
+    (b) => b.contrast ?? 0,
+    20,
+    ['slightly punchy', 'high contrast', 'very high contrast'],
+    ['slightly flat', 'low contrast', 'very low contrast'],
+  ),
+  (b) => ((b.saturation ?? 0) <= -90 ? 'black and white' : colorfulness(b)),
+  graded(
+    (b) => b.highlights ?? 0,
+    20,
+    ['slightly bright highlights', 'bright highlights', 'very bright highlights'],
+    ['slightly soft highlights', 'soft highlights', 'very soft highlights'],
+  ),
+  graded(
+    (b) => b.shadows ?? 0,
+    20,
+    ['slightly lifted shadows', 'lifted shadows', 'strongly lifted shadows'],
+    ['slightly deep shadows', 'deep shadows', 'very deep shadows'],
+  ),
+  graded(
+    (b) => b.whites ?? 0,
+    20,
+    ['slightly bright whites', 'bright whites', 'very bright whites'],
+    ['slightly dim whites', 'dim whites', 'very dim whites'],
+  ),
+  graded(
+    (b) => b.blacks ?? 0,
+    20,
+    ['slightly lifted blacks', 'lifted blacks', 'strongly lifted blacks'],
+    ['slightly crushed blacks', 'crushed blacks', 'heavily crushed blacks'],
+  ),
+  graded((b) => b.fade ?? 0, 15, ['slightly faded', 'faded', 'heavily faded']),
+  graded((b) => b.grain ?? 0, 20, ['fine grain', 'grainy', 'very grainy']),
+  graded(
+    (b) => b.vignette ?? 0,
+    20,
+    ['subtle white vignette', 'white vignette', 'strong white vignette'],
+    ['subtle vignette', 'vignette', 'strong vignette'],
+  ),
+]
+
+/**
+ * Describes basic adjustments in a few words ("warm, bright, low contrast, slightly faded"),
+ * roughly the inverse of `describeToEdit`. Returns an empty string for a default edit.
+ */
+export function describeEditInWords(basic: Partial<Basic>): string {
+  return DESCRIBERS.map((d) => d(basic))
+    .filter((w): w is string => !!w)
+    .join(', ')
+}
