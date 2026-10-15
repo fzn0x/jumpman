@@ -22,7 +22,10 @@ export function SummaryBar({ ctx, withHistory }: { ctx: BatchContext; withHistor
   const individual = hasOverride(ctx.state)
   return (
     <div className="flex items-center gap-2 px-3 py-2">
-      <div className="scrollbar-none flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
+      <div
+        className="scrollbar-none flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto"
+        style={{ maskImage: 'linear-gradient(to right, black 85%, transparent)' }}
+      >
         {KEYS.map((k) => (
           <button
             key={k}

@@ -143,6 +143,11 @@ export function Viewport({ ctx }: { ctx: BatchContext }) {
           aria-label={photo ? `Edited preview of ${photo.name}` : 'Preview'}
           role="img"
         />
+        {(tab === 'adjust' || tab === 'color') && !cropping && (
+          <div className="pointer-events-none absolute top-2 left-2 opacity-90 lg:hidden">
+            <Histogram className="h-9 w-24 rounded-lg" />
+          </div>
+        )}
         {compare === 'split' && view && <SplitHandle width={view.cssW} />}
         {cropping && view && photo && <CropOverlay ctx={ctx} w={view.cssW} h={view.cssH} />}
         {!cropping && mask && view && frame && maskLayerId && (
@@ -156,11 +161,6 @@ export function Viewport({ ctx }: { ctx: BatchContext }) {
           />
         )}
       </div>
-      {(tab === 'adjust' || tab === 'color') && (
-        <div className="pointer-events-none absolute top-2 left-3 lg:hidden">
-          <Histogram className="h-11 w-32" />
-        </div>
-      )}
       {glError && (
         <p className="absolute inset-x-6 text-center text-sm text-mute">
           This device can’t run the WebGL2 renderer ({glError}). Try a recent version of Chrome,
