@@ -53,3 +53,63 @@
     display: none;
   }
 }
+
+/* Range slider: white thumb, filled track up to the value. */
+.jm-range {
+  appearance: none;
+  height: 28px;
+  background: transparent;
+  --track: linear-gradient(
+    to right,
+    var(--color-white) 0 var(--pct),
+    var(--color-ink-3) var(--pct) 100%
+  );
+}
+.jm-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--track);
+}
+.jm-range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--track);
+}
+.jm-range::-webkit-slider-thumb {
+  appearance: none;
+  margin-top: -9px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: white;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.45);
+}
+.jm-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 999px;
+  background: white;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.45);
+}
+
+.jm-sheet[open] {
+  animation: jm-sheet-in 280ms var(--ease-snap);
+}
+@keyframes jm-sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component animations */
+    animation-duration: 1ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component transitions */
+    transition-duration: 1ms !important;
+  }
+}
