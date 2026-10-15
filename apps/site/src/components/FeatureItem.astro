@@ -1,0 +1,95 @@
+---
+import { LOOKS } from '@jumpman/core'
+import type { Feature } from '../data/features'
+import StatusBadge from './StatusBadge.astro'
+
+interface Props {
+  feature: Feature
+  size?: 'lg' | 'md'
+}
+
+const { feature, size = 'md' } = Astro.props
+---
+
+<li class:list={['feature', `feature--${size}`, `is-${feature.status}`]}>
+  <div class="top">
+    <h3>{feature.title}</h3>
+    <StatusBadge status={feature.status} />
+  </div>
+  <p>{feature.description}</p>
+  {
+    feature.demo === 'luts' && (
+      <ul class="luts" role="list" aria-label={`${LOOKS.length} built-in LUTs`}>
+        {LOOKS.map((look) => (
+          <li style={`--swatch: ${look.swatch}`} title={look.name}>
+            <span class="visually-hidden">{look.name}</span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</li>
+
+<style>
+  .feature {
+    display: grid;
+    align-content: start;
+    gap: 0.6rem;
+    padding-block: 1.5rem;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  h3 {
+    min-width: 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  .top :global(.badge) {
+    translate: 0 -0.15em;
+  }
+
+  p {
+    color: var(--fg-soft);
+    font-size: 1rem;
+    max-width: 40em;
+  }
+
+  .feature--lg {
+    padding-block: 1.75rem;
+    gap: 0.75rem;
+  }
+
+  .feature--lg h3 {
+    font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+    letter-spacing: -0.03em;
+  }
+
+  .feature--lg p {
+    font-size: 1.0625rem;
+  }
+
+  .luts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: 0.4rem;
+  }
+
+  .luts li {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.45rem;
+    background: var(--swatch);
+    box-shadow: inset 0 0 0 1px rgb(28 28 30 / 0.18);
+  }
+</style>

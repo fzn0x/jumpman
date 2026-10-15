@@ -310,16 +310,21 @@ kbd {
 }
 
 .badge--available {
-  background: var(--ink);
-  color: var(--white);
+  background: rgb(28 28 30 / 0.1);
+  color: var(--ink);
 }
 
 .badge--available svg {
-  color: var(--salmon);
+  color: var(--red);
 }
 
 .dark .badge--available {
   background: var(--ink-raised);
+  color: var(--white);
+}
+
+.dark .badge--available svg {
+  color: var(--salmon);
 }
 
 .badge--roadmap {

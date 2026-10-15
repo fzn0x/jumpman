@@ -1,0 +1,95 @@
+---
+import { featureGroup } from '../data/features'
+import { links } from '../lib/site'
+import Icon from './Icon.astro'
+import StatusBadge from './StatusBadge.astro'
+
+const group = featureGroup('roadmap')
+---
+
+<section class="roadmap section" id={group.id} aria-labelledby="roadmap-title">
+  <div class="container">
+    <div class="head">
+      <h2 id="roadmap-title" class="display-l">{group.title}.</h2>
+      <div class="intro">
+        <p class="lead">{group.intro}</p>
+        <a class="btn btn--ghost" href={links.issues} rel="noopener">
+          Help build it
+          <Icon name="arrow-up-right" />
+        </a>
+      </div>
+    </div>
+    <ul class="items" role="list">
+      {
+        group.features.map((feature) => (
+          <li class="item">
+            <StatusBadge status={feature.status} />
+            <h3>{feature.title}</h3>
+            <p>{feature.description}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 1.5rem 3rem;
+    margin-bottom: clamp(2.5rem, 1.5rem + 3vw, 4rem);
+  }
+
+  .intro {
+    display: grid;
+    justify-items: start;
+    gap: 1.25rem;
+  }
+
+  .items {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .item {
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border: 2px dashed rgb(28 28 30 / 0.45);
+    border-radius: var(--radius);
+  }
+
+  h3 {
+    margin-top: 0.25rem;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  p {
+    color: var(--ink-soft);
+    font-size: 1rem;
+  }
+
+  @media (max-width: 56rem) {
+    .head {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .items {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 34rem) {
+    .items {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

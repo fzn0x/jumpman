@@ -1,0 +1,24 @@
+---
+import type { FeatureStatus } from '../data/features'
+import Icon from './Icon.astro'
+
+interface Props {
+  status: FeatureStatus
+}
+
+const { status } = Astro.props
+---
+
+{
+  status === 'available' ? (
+    <span class="badge badge--available">
+      <Icon name="check" size={14} />
+      Available
+    </span>
+  ) : (
+    <span class="badge badge--roadmap">
+      <Icon name="clock" size={14} />
+      Roadmap
+    </span>
+  )
+}

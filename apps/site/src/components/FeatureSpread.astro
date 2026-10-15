@@ -1,0 +1,133 @@
+---
+/** A feature group as a spread: sticky title + phone on one side, the feature list on the other. */
+import type { FeatureGroup } from '../data/features'
+import type { Screen } from '../data/screens'
+import FeatureItem from './FeatureItem.astro'
+import Phone from './Phone.astro'
+
+interface Props {
+  group: FeatureGroup
+  screen: Screen
+  columns?: 1 | 2
+  reverse?: boolean
+}
+
+const { group, screen, columns = 1, reverse = false } = Astro.props
+const titleId = `${group.id}-title`
+---
+
+<article class:list={['spread', { reverse }]} id={group.id} aria-labelledby={titleId}>
+  <div class="aside">
+    <div class="sticky">
+      <h2 id={titleId} class="display-l">{group.title}</h2>
+      <p class="lead">{group.intro}</p>
+      <figure class="shot">
+        <Phone screen={screen} class="shot-phone" />
+        <figcaption>{screen.caption}</figcaption>
+      </figure>
+    </div>
+  </div>
+  <ul class:list={['list', { two: columns === 2 }]} role="list">
+    {group.features.map((feature) => <FeatureItem feature={feature} size={columns === 1 ? 'lg' : 'md'} />)}
+  </ul>
+</article>
+
+<style>
+  .spread {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(2rem, 1rem + 4vw, 6rem);
+    align-items: start;
+  }
+
+  .reverse {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  }
+
+  .reverse .aside {
+    order: 2;
+  }
+
+  .sticky {
+    position: sticky;
+    top: calc(var(--header-h) + 2rem);
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .lead {
+    max-width: 26rem;
+  }
+
+  .shot {
+    display: grid;
+    justify-items: start;
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+
+  .shot :global(.shot-phone) {
+    --phone-w: min(12rem, 60vw);
+    rotate: -3deg;
+  }
+
+  .reverse .shot :global(.shot-phone) {
+    rotate: 3deg;
+  }
+
+  figcaption {
+    max-width: 16rem;
+    color: var(--fg-soft);
+    font-size: 0.9375rem;
+    font-weight: 500;
+  }
+
+  .list {
+    display: grid;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(1.5rem, 3vw, 3rem);
+    border-bottom: 0;
+  }
+
+  @media (max-height: 50rem) and (min-width: 56.01rem) {
+    .shot {
+      display: none;
+    }
+  }
+
+  @media (max-width: 56rem) {
+    .spread,
+    .reverse {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .reverse .aside {
+      order: 0;
+    }
+
+    .sticky {
+      position: static;
+    }
+
+    .shot {
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: end;
+      gap: 1.5rem;
+    }
+
+    .shot :global(.shot-phone) {
+      --phone-w: min(11rem, 42vw);
+    }
+  }
+
+  @media (max-width: 40rem) {
+    .two {
+      grid-template-columns: minmax(0, 1fr);
+      border-bottom: 1px solid var(--hairline);
+    }
+  }
+</style>

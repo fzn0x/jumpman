@@ -1,0 +1,390 @@
+---
+import { describeToEdit } from '@jumpman/core'
+import { featureGroup } from '../data/features'
+import { links } from '../lib/site'
+import FeatureItem from './FeatureItem.astro'
+import Icon from './Icon.astro'
+
+const group = featureGroup('only-in-jumpman')
+
+// Run the real, offline edit-by-description parser at build time.
+const prompt = 'warmer, softer highlights, slightly faded'
+const described = describeToEdit(prompt)
+
+const before = [
+  { a: '#A9C3CF', b: '#5E7C8A', c: '#34495E', sun: '#E4EEF2' },
+  { a: '#FFE6B8', b: '#F4A259', c: '#B86B3C', sun: '#FFF6E0' },
+  { a: '#6B5A70', b: '#2B2230', c: '#1A1420', sun: '#9C8C8F' },
+  { a: '#D6E29A', b: '#7BAE7F', c: '#3D5A3A', sun: '#F2F5D8' },
+  { a: '#DCD6D0', b: '#B5ADA6', c: '#7C736D', sun: '#F4F1EE' },
+]
+const after = [
+  { a: '#FFC4AB', b: '#EE6880', c: '#A23A5A' },
+  { a: '#FFCDB0', b: '#F2707F', c: '#A83E5D' },
+  { a: '#FCC0A8', b: '#EA6479', c: '#9E3756' },
+  { a: '#FFC8AD', b: '#F06C80', c: '#A43B5B' },
+  { a: '#FFCBAF', b: '#F16E82', c: '#A73D5C' },
+]
+const tileStyle = (t: { a: string; b: string; c: string; sun?: string }) =>
+  `--a:${t.a};--b:${t.b};--c:${t.c};--sun:${t.sun ?? '#FFE9C9'}`
+---
+
+<section class="only dark" id={group.id} aria-labelledby="only-title">
+  <div class="container">
+    <div class="head">
+      <h2 id="only-title" class="display-l"><span class="accent">Only</span> in Jumpman.</h2>
+      <p class="lead">{group.intro}</p>
+    </div>
+
+    <div class="ticks" aria-hidden="true"></div>
+
+    <div class="demos">
+      <figure class="demo">
+        <div class="demo-body describe">
+          <div class="field">
+            <span class="field-label">Describe the edit</span>
+            <p class="field-text">{prompt}<span class="caret" aria-hidden="true"></span></p>
+          </div>
+          <ol class="matches" role="list">
+            {
+              described.matched.map((m) => (
+                <li>
+                  <span class="phrase">{m.phrase}</span>
+                  <Icon name="arrow-right" size={18} class="arrow" />
+                  <span class="effects">
+                    {m.effect.split(', ').map((e) => (
+                      <span class="chip">{e}</span>
+                    ))}
+                  </span>
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+        <figcaption>
+          <strong>Edit by description.</strong> Real output from Jumpman’s offline parser, computed when
+          this page was built.
+        </figcaption>
+      </figure>
+
+      <figure class="demo">
+        <div class="demo-body match" aria-hidden="true">
+          <div class="ref">
+            <div class="tile" style={tileStyle({ a: '#FFC9AE', b: '#F06A80', c: '#A63B5C' })}></div>
+            <span class="tag">Reference</span>
+          </div>
+          <div class="rows">
+            <div class="row">
+              <span class="row-label">Before</span>
+              <div class="tiles">{before.map((t) => <div class="tile" style={tileStyle(t)} />)}</div>
+            </div>
+            <div class="row">
+              <span class="row-label">After</span>
+              <div class="tiles">{after.map((t) => <div class="tile" style={tileStyle(t)} />)}</div>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <strong>Reference-match.</strong> Pick a hero shot. Five photos with five different color
+          casts come back as one set.
+        </figcaption>
+      </figure>
+    </div>
+
+    <ul class="grid" role="list">
+      {group.features.map((feature) => <FeatureItem feature={feature} />)}
+      <li class="try">
+        <p>Everything above ships in the free web app. No account, no upload, no catch.</p>
+        <a class="btn btn--primary" href={links.app}>
+          Try them all
+          <Icon name="arrow-right" />
+        </a>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<style>
+  .only {
+    padding-block: clamp(4.5rem, 3rem + 7vw, 9rem);
+  }
+
+  .head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 1.5rem 3rem;
+  }
+
+  .accent {
+    color: var(--red);
+  }
+
+  .lead {
+    color: var(--mist);
+  }
+
+  .ticks {
+    margin-block: clamp(2.5rem, 2rem + 2vw, 4rem);
+  }
+
+  .demos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1rem, 2vw, 1.5rem);
+    margin-bottom: clamp(3rem, 2rem + 3vw, 5rem);
+  }
+
+  .demo {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    gap: 1rem;
+  }
+
+  .demo-body {
+    padding: clamp(1.25rem, 1rem + 1.5vw, 2rem);
+    border-radius: 1.5rem;
+    background: var(--ink-raised);
+  }
+
+  figcaption {
+    color: var(--gray);
+    font-size: 0.9375rem;
+  }
+
+  figcaption strong {
+    color: var(--white);
+    font-weight: 600;
+  }
+
+  /* Edit by description */
+
+  .field {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: 1rem;
+    background: var(--ink);
+    box-shadow: inset 0 0 0 1.5px var(--red);
+  }
+
+  .field-label {
+    color: var(--gray);
+    font-size: 0.8125rem;
+    font-weight: 500;
+  }
+
+  .field-text {
+    font-size: clamp(1.05rem, 1rem + 0.4vw, 1.25rem);
+    font-weight: 550;
+    letter-spacing: -0.01em;
+  }
+
+  .caret {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    margin-left: 2px;
+    vertical-align: -0.15em;
+    background: var(--salmon);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .caret {
+      animation: blink 1.1s steps(1) infinite;
+    }
+  }
+
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  .matches {
+    display: grid;
+    gap: 0.85rem;
+    margin-top: 1.25rem;
+  }
+
+  .matches li {
+    display: grid;
+    grid-template-columns: minmax(7.5rem, auto) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .phrase {
+    color: var(--salmon);
+    font-weight: 600;
+  }
+
+  .matches :global(.arrow) {
+    color: var(--gray);
+  }
+
+  .effects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  .effects .chip {
+    background: var(--ink);
+    font-size: 0.85rem;
+    padding: 0.3em 0.75em;
+  }
+
+  /* Reference-match */
+
+  .match {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 2fr);
+    align-items: center;
+    gap: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .ref {
+    position: relative;
+  }
+
+  .ref .tile {
+    border-radius: 0.9rem;
+    box-shadow: 0 0 0 3px var(--ink-raised), 0 0 0 5px var(--red);
+  }
+
+  .tag {
+    position: absolute;
+    left: 50%;
+    bottom: -0.7rem;
+    padding: 0.2em 0.7em;
+    border-radius: 999px;
+    background: var(--red);
+    color: var(--white);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    translate: -50% 0;
+  }
+
+  .rows {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .row {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .row-label {
+    color: var(--gray);
+    font-size: 0.8125rem;
+    font-weight: 500;
+  }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .tile {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    background: linear-gradient(var(--a), var(--b));
+  }
+
+  .tile::before {
+    content: '';
+    position: absolute;
+    top: 26%;
+    left: 56%;
+    width: 24%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--sun);
+  }
+
+  .tile::after {
+    content: '';
+    position: absolute;
+    inset: 48% 0 0;
+    background: var(--c);
+    clip-path: polygon(0 38%, 28% 6%, 52% 34%, 74% 12%, 100% 42%, 100% 100%, 0 100%);
+  }
+
+  /* Feature list */
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: clamp(1.5rem, 3vw, 3rem);
+  }
+
+  .try {
+    grid-column: span 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    align-self: start;
+    margin-top: 1.5rem;
+    padding: 1.5rem clamp(1.25rem, 2vw, 2rem);
+    border-radius: 1.25rem;
+    background: var(--ink-raised);
+  }
+
+  .try p {
+    max-width: 28rem;
+    font-size: 1.0625rem;
+    font-weight: 550;
+  }
+
+  @media (max-width: 62rem) {
+    .demos {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .try {
+      grid-column: span 1;
+    }
+  }
+
+  @media (max-width: 48rem) {
+    .head {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 40rem) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .matches li {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.4rem;
+    }
+
+    .matches :global(.arrow) {
+      display: none;
+    }
+
+    .match {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ref {
+      width: 42%;
+      margin-bottom: 0.75rem;
+    }
+  }
+</style>

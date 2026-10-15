@@ -1,5 +1,11 @@
 ---
+import FeatureSpread from '../components/FeatureSpread.astro'
 import Hero from '../components/Hero.astro'
+import HowItWorks from '../components/HowItWorks.astro'
+import OnlyInJumpman from '../components/OnlyInJumpman.astro'
+import Roadmap from '../components/Roadmap.astro'
+import { featureGroup } from '../data/features'
+import { screen } from '../data/screens'
 import Base from '../layouts/Base.astro'
 ---
 
@@ -8,4 +14,29 @@ import Base from '../layouts/Base.astro'
   description="Free, open-source batch photo editor. Edit multiple photos at once with presets, LUTs, layers and Lightroom XMP, offline in your browser or on Android."
 >
   <Hero />
+  <HowItWorks />
+  <section class="features" id="features" aria-label="Features">
+    <div class="container stack">
+      <FeatureSpread group={featureGroup('batch-editing')} screen={screen('editor')} />
+      <FeatureSpread
+        group={featureGroup('pro-workflow')}
+        screen={screen('grid')}
+        columns={2}
+        reverse
+      />
+    </div>
+  </section>
+  <OnlyInJumpman />
+  <Roadmap />
 </Base>
+
+<style>
+  .features {
+    padding-bottom: clamp(4.5rem, 3rem + 7vw, 9rem);
+  }
+
+  .stack {
+    display: grid;
+    gap: clamp(5rem, 3rem + 8vw, 10rem);
+  }
+</style>
