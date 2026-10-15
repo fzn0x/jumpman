@@ -210,9 +210,12 @@ const options: Option[] = [
         : /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
           ? 2
           : 0
-      const fromHash = panels.findIndex((p) => p && '#' + p.id === location.hash)
-      if (fromHash >= 0) initial = fromHash
+      const fromHash = () => panels.findIndex((p) => p && '#' + p.id === location.hash)
+      if (fromHash() >= 0) initial = fromHash()
       select(initial)
+      window.addEventListener('hashchange', () => {
+        if (fromHash() >= 0) select(fromHash())
+      })
     }
 
     for (const button of document.querySelectorAll('[data-copy]')) {
