@@ -1,0 +1,54 @@
+name: Deploy website
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build landing site
+        run: pnpm --filter @jumpman/site build
+        env:
+          SITE_BASE: /jumpman/
+      - name: Build web app
+        run: pnpm --filter @jumpman/web build
+        env:
+          JUMPMAN_BASE: /jumpman/app/
+      - name: Assemble site
+        run: |
+          mkdir -p apps/site/dist/app
+          cp -r apps/web/dist/. apps/site/dist/app/
+          touch apps/site/dist/.nojekyll
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: apps/site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
