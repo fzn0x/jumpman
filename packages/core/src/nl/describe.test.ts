@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { BASIC_KEYS, basicSpec } from '../model/basic.ts'
 import { describeToEdit } from './describe.ts'
+import { LEXICON, MODIFIERS } from './lexicon.ts'
 
 const phrasesOf = (text: string) => describeToEdit(text).matched.map((m) => m.phrase)
 
@@ -227,5 +229,68 @@ describe('intensity and negation', () => {
     const r = describeToEdit(`${long} warmer`)
     expect(r.matched).toHaveLength(1)
     expect(r.unmatched).toEqual([])
+  })
+})
+
+describe('lexicon coverage', () => {
+  const phrases = LEXICON.flatMap((e) => e.phrases)
+
+  it('parses every lexicon phrase on its own as exactly that phrase', () => {
+    for (const phrase of phrases) {
+      const r = describeToEdit(phrase)
+      expect(
+        r.matched.map((m) => m.phrase),
+        phrase,
+      ).toEqual([phrase])
+      expect(r.unmatched, phrase).toEqual([])
+    }
+  })
+
+  it('applies every modifier to the phrase that follows it', () => {
+    for (const modifier of MODIFIERS.keys()) {
+      const r = describeToEdit(`${modifier} warm`)
+      expect(
+        r.matched.map((m) => m.phrase),
+        modifier,
+      ).toEqual([`${modifier} warm`])
+    }
+  })
+
+  it('keeps every output in range and at slider precision', () => {
+    const isInt = (v: number) => Number.isInteger(v)
+    for (const prefix of ['', 'extremely ', 'slightly ', 'very slightly ', 'less ', 'no ']) {
+      for (const phrase of phrases) {
+        const text = `${prefix}${phrase}, ${prefix}${phrase}, ${prefix}${phrase}`
+        const { basic, hsl, split } = describeToEdit(text)
+        for (const key of BASIC_KEYS) {
+          const v = basic[key]
+          if (v === undefined) continue
+          const { min, max, precision } = basicSpec(key)
+          expect(v, `${text}: ${key}`).not.toBe(0)
+          expect(v, `${text}: ${key}`).toBeGreaterThanOrEqual(min)
+          expect(v, `${text}: ${key}`).toBeLessThanOrEqual(max)
+          expect(v, `${text}: ${key}`).toBe(Number(v.toFixed(precision)))
+        }
+        for (const shift of Object.values(hsl ?? {})) {
+          for (const v of [shift.hue, shift.saturation, shift.luminance]) {
+            expect(isInt(v) && Math.abs(v) <= 100, text).toBe(true)
+          }
+        }
+        if (split) {
+          expect(isInt(split.shadowHue) && split.shadowHue >= 0 && split.shadowHue < 360).toBe(true)
+          expect(isInt(split.highlightHue) && split.highlightHue < 360).toBe(true)
+          expect(split.shadowSaturation + split.highlightSaturation, text).toBeGreaterThan(0)
+          expect(Math.max(split.shadowSaturation, split.highlightSaturation)).toBeLessThanOrEqual(
+            100,
+          )
+          expect(Math.abs(split.balance)).toBeLessThanOrEqual(100)
+        }
+      }
+    }
+  })
+
+  it('folds accents and curly apostrophes', () => {
+    expect(describeToEdit('Vívid').basic).toEqual(describeToEdit('vivid').basic)
+    expect(describeToEdit('don’t add grain, film').basic.grain).toBeUndefined()
   })
 })
