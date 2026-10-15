@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Jumpman">
+  <title>Jumpman</title><rect width="120" height="120" rx="28" fill="#1C1C1E"/>
+  <g transform="scale(1)">
+    <rect x="18" y="30" width="58" height="70" rx="12" fill="#FFA0A0" transform="rotate(-14 47 65)"/>
+    <rect x="28" y="24" width="58" height="70" rx="12" fill="#FFFFFF" transform="rotate(-3 57 59)"/>
+    <g transform="rotate(9 70 62)">
+      <rect x="41" y="25" width="58" height="72" rx="12" fill="#E00000"/>
+      <path d="M79 42 V70 a12 12 0 0 1 -24 0" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round"/>
+      <circle cx="86" cy="36" r="0" fill="#FFFFFF"/>
+    </g>
+  </g>
+</svg>
