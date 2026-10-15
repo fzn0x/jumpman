@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json",
     "build:android": "vite build && cap sync android",
-    "android": "cap open android"
+    "android": "cap open android",
+    "android:assets": "npx @capacitor/assets@3.0.5 generate --android --iconBackgroundColor \"#1C1C1E\" --iconBackgroundColorDark \"#1C1C1E\" --splashBackgroundColor \"#1C1C1E\" --splashBackgroundColorDark \"#1C1C1E\""
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
