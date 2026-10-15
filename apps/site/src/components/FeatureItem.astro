@@ -58,6 +58,17 @@ const { feature, size = 'md' } = Astro.props
     translate: 0 -0.15em;
   }
 
+  /* Compact items stack the badge above the title so long titles never wrap around it. */
+  .feature--md .top {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .feature--md .top :global(.badge) {
+    translate: none;
+  }
+
   p {
     color: var(--fg-soft);
     font-size: 1rem;
