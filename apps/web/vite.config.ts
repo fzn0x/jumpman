@@ -3,12 +3,16 @@ import tailwindcss from '@tailwindcss/vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import pkg from './package.json' with { type: 'json' }
 
 // GitHub Pages serves the app from /jumpman/app/; Capacitor and self-hosting use relative paths.
 const base = process.env.JUMPMAN_BASE ?? './'
 
 export default defineConfig({
   base,
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()] }),
