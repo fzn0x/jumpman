@@ -10,11 +10,15 @@ import Roadmap from '../components/Roadmap.astro'
 import { featureGroup } from '../data/features'
 import { screen } from '../data/screens'
 import Base from '../layouts/Base.astro'
+import { HOME_DESCRIPTION, softwareApplicationJsonLd } from '../lib/seo'
+
+const jsonLd = softwareApplicationJsonLd(Astro.site ?? new URL('https://fzn0x.github.io'))
 ---
 
 <Base
   title="Jumpman: Edit multiple photos at once | Free batch photo editor"
-  description="Free, open-source batch photo editor. Edit multiple photos at once with presets, LUTs, layers and Lightroom XMP, offline in your browser or on Android."
+  description={HOME_DESCRIPTION}
+  jsonLd={jsonLd}
 >
   <Hero />
   <HowItWorks />
