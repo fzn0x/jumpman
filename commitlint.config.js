@@ -19,6 +19,8 @@ export default {
         'deps',
         'docs',
         'release',
+        'brand',
+        'repo',
       ],
     ],
   },
