@@ -1,7 +1,6 @@
 /**
  * App screenshots shown in phone frames. Paths are relative to `public/` (the base path is added
- * when rendering). To use real captures, drop 390×844 (or any 390:844) PNGs into
- * `public/screenshots/` and change the `.svg` extensions below to `.png`.
+ * when rendering). Captures are 390:844 phone screenshots of the web app.
  */
 export interface Screen {
   id: 'collection' | 'editor' | 'layers' | 'grid'
@@ -13,26 +12,26 @@ export interface Screen {
 export const screens: Screen[] = [
   {
     id: 'collection',
-    src: 'screenshots/collection.svg',
-    alt: 'The Spring Pink collection in Jumpman with nine photos selected and an “Edit these images” button.',
+    src: 'screenshots/collection.jpg',
+    alt: 'The Spring Pink collection in Jumpman with four of ten photos selected and an “Edit these images” button.',
     caption: 'Pick photos from a collection, then edit them together.',
   },
   {
     id: 'editor',
-    src: 'screenshots/editor.svg',
-    alt: 'Jumpman’s editor in Global mode: a summary bar of brightness, exposure, highlights, shadows and saturation above an exposure dial.',
-    caption: 'One global edit, applied to all twelve photos.',
+    src: 'screenshots/editor.jpg',
+    alt: 'Jumpman’s editor in Global mode: the summary bar shows Brightness +12, Exposure +0.30 and Highlights −20 above the red Brightness row and the dial.',
+    caption: 'One global edit, applied to all ten photos.',
   },
   {
     id: 'layers',
-    src: 'screenshots/layers.svg',
-    alt: 'The layer stack in Jumpman: Adjust, a Spring Pink LUT at 70% opacity, Curves, HSL and Split toning.',
+    src: 'screenshots/layers.jpg',
+    alt: 'The layer stack in Jumpman: auto match, a Spring Pink LUT at 80% and the global adjust layer.',
     caption: 'Stack layers and set each one’s opacity.',
   },
   {
     id: 'grid',
-    src: 'screenshots/grid.svg',
-    alt: 'A before-and-after grid of twelve photos, two marked as having individual edits.',
+    src: 'screenshots/grid.jpg',
+    alt: 'A side-by-side before-and-after grid of the whole batch in the Spring Pink look.',
     caption: 'Check the whole batch before and after.',
   },
 ]
