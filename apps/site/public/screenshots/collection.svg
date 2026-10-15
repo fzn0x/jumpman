@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844" font-family="Inter, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <title>Placeholder: the Spring Pink collection with nine photos selected</title>
+  <defs>
+    <clipPath id="r"><rect width="100" height="100" rx="7"/></clipPath>
+    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD9D4"/><stop offset="1" stop-color="#FF9A9A"/></linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#BFE3F0"/><stop offset="1" stop-color="#FBE3D2"/></linearGradient>
+    <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFB49C"/><stop offset="1" stop-color="#F56D7F"/></linearGradient>
+    <linearGradient id="g4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#DCEBD2"/><stop offset="1" stop-color="#7BAE7F"/></linearGradient>
+    <linearGradient id="g5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1B1035"/><stop offset="1" stop-color="#3A2A66"/></linearGradient>
+    <linearGradient id="g6" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F8DDB8"/><stop offset="1" stop-color="#F4A259"/></linearGradient>
+    <symbol id="p1" viewBox="0 0 100 100"><g clip-path="url(#r)"><rect width="100" height="100" fill="url(#g1)"/><path d="M-5 80C20 60 45 58 70 30S100 10 110 5" stroke="#6E3B45" stroke-width="3" fill="none"/><g fill="#fff"><circle cx="24" cy="62" r="7"/><circle cx="44" cy="52" r="9"/><circle cx="62" cy="38" r="7"/><circle cx="80" cy="22" r="8"/></g><g fill="#FF8FA3"><circle cx="34" cy="70" r="6"/><circle cx="56" cy="30" r="5"/><circle cx="88" cy="40" r="6"/></g></g></symbol>
+    <symbol id="p2" viewBox="0 0 100 100"><g clip-path="url(#r)"><rect width="100" height="100" fill="url(#g2)"/><rect y="52" width="100" height="22" fill="#3E8FB0"/><path d="M0 70Q30 64 60 72T100 68V100H0Z" fill="#EBC9A0"/><path d="M8 58h22M48 62h30" stroke="#fff" stroke-opacity=".5" stroke-width="2"/></g></symbol>
+    <symbol id="p3" viewBox="0 0 100 100"><g clip-path="url(#r)"><rect width="100" height="100" fill="url(#g3)"/><circle cx="64" cy="48" r="14" fill="#FFE7C2"/><path d="M0 66 26 48l18 12 22-18 34 26V100H0Z" fill="#B8405E"/><path d="M0 80 30 66l28 10 42-12V100H0Z" fill="#5A2240"/></g></symbol>
+    <symbol id="p4" viewBox="0 0 100 100"><g clip-path="url(#r)"><rect width="100" height="100" fill="url(#g4)"/><path d="M14 90 30 34l16 56ZM40 90l18-66 18 66ZM66 90l16-46 16 46Z" fill="#2F4A3A"/><rect y="88" width="100" height="12" fill="#2F4A3A"/></g></symbol>
+    <symbol id="p5" viewBox="0 0 100 100"><g clip-path="url(#r)"><rect width="100" height="100" fill="url(#g5)"/><path d="M0 100V56h16V40h14v30h12V28h18v42h12V48h16v20h12v32Z" fill="#120A26"/><g fill="#F72585"><rect x="20" y="46" width="4" height="4"/><rect x="46" y="36" width="4" height="4"/><rect x="76" y="56" width="4" height="4"/></g><g fill="#2EC4B6"><rect x="48" y="50" width="4" height="4"/><rect x="22" y="58" width="4" height="4"/><rect x="88" y="74" width="4" height="4"/></g></g></symbol>
+    <symbol id="p6" viewBox="0 0 100 100"><g clip-path="url(#r)"><rect width="100" height="100" fill="url(#g6)"/><path d="M0 60h100v40H0Z" fill="#D08C5B"/><path d="M46 60h8l26 40H20Z" fill="#5B4038"/><path d="M50 66v6M50 80v8" stroke="#F8DDB8" stroke-width="2"/></g></symbol>
+    <g id="on"><circle r="11" fill="#E00000" stroke="#fff" stroke-width="2"/><path d="M-4.5 0.5 -1.2 3.8 5 -3" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g id="off"><circle r="10" fill="#000" fill-opacity=".25" stroke="#fff" stroke-width="2"/></g>
+  </defs>
+
+  <rect width="390" height="844" fill="#1C1C1E"/>
+
+  <text x="34" y="33" fill="#fff" font-size="15" font-weight="600">9:41</text>
+  <g fill="#fff"><rect x="296" y="24" width="3" height="5" rx="1"/><rect x="301" y="22" width="3" height="7" rx="1"/><rect x="306" y="20" width="3" height="9" rx="1"/><rect x="311" y="18" width="3" height="11" rx="1"/><rect x="324" y="18" width="24" height="12" rx="3.5" fill="none" stroke="#fff" stroke-opacity=".5"/><rect x="326" y="20" width="17" height="8" rx="2"/></g>
+
+  <path d="M30 76l-8 8 8 8" stroke="#FFA0A0" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="38" y="89.5" fill="#FFA0A0" font-size="16" font-weight="500">Collections</text>
+  <text x="370" y="89.5" fill="#FFA0A0" font-size="16" font-weight="600" text-anchor="end">Select all</text>
+  <text x="20" y="138" fill="#fff" font-size="32" font-weight="800" letter-spacing="-1">Spring Pink</text>
+  <text x="20" y="162" fill="#A1A1A6" font-size="14">24 photos · 9 selected</text>
+
+  <g>
+    <use href="#p3" x="20" y="182" width="114" height="114"/><use href="#on" x="116" y="200"/>
+    <use href="#p1" x="138" y="182" width="114" height="114"/><use href="#on" x="234" y="200"/>
+    <use href="#p2" x="256" y="182" width="114" height="114"/><use href="#off" x="352" y="200"/>
+    <use href="#p1" x="20" y="300" width="114" height="114"/><use href="#on" x="116" y="318"/>
+    <use href="#p4" x="138" y="300" width="114" height="114"/><use href="#off" x="234" y="318"/>
+    <use href="#p3" x="256" y="300" width="114" height="114"/><use href="#on" x="352" y="318"/>
+    <use href="#p6" x="20" y="418" width="114" height="114"/><use href="#on" x="116" y="436"/>
+    <use href="#p1" x="138" y="418" width="114" height="114"/><use href="#on" x="234" y="436"/>
+    <use href="#p5" x="256" y="418" width="114" height="114"/><use href="#on" x="352" y="436"/>
+    <use href="#p2" x="20" y="536" width="114" height="114"/><use href="#off" x="116" y="554"/>
+    <use href="#p3" x="138" y="536" width="114" height="114"/><use href="#on" x="234" y="554"/>
+    <use href="#p1" x="256" y="536" width="114" height="114"/><use href="#on" x="352" y="554"/>
+    <use href="#p4" x="20" y="654" width="114" height="114"/>
+    <use href="#p6" x="138" y="654" width="114" height="114"/>
+    <use href="#p2" x="256" y="654" width="114" height="114"/>
+  </g>
+  <g fill="none" stroke="#E00000" stroke-width="3">
+    <rect x="21.5" y="183.5" width="111" height="111" rx="7"/><rect x="139.5" y="183.5" width="111" height="111" rx="7"/>
+    <rect x="21.5" y="301.5" width="111" height="111" rx="7"/><rect x="257.5" y="301.5" width="111" height="111" rx="7"/>
+    <rect x="21.5" y="419.5" width="111" height="111" rx="7"/><rect x="139.5" y="419.5" width="111" height="111" rx="7"/><rect x="257.5" y="419.5" width="111" height="111" rx="7"/>
+    <rect x="139.5" y="537.5" width="111" height="111" rx="7"/><rect x="257.5" y="537.5" width="111" height="111" rx="7"/>
+  </g>
+
+  <path d="M0 724a24 24 0 0 1 24-24h342a24 24 0 0 1 24 24v120H0Z" fill="#2C2C2E"/>
+  <text x="24" y="738" fill="#fff" font-size="15" font-weight="600">9 photos selected</text>
+  <text x="366" y="738" fill="#A1A1A6" font-size="15" text-anchor="end">Clear</text>
+  <rect x="20" y="756" width="350" height="52" rx="16" fill="#E00000"/>
+  <text x="195" y="788" fill="#fff" font-size="17" font-weight="600" text-anchor="middle">Edit these images</text>
+  <rect x="128" y="828" width="134" height="5" rx="2.5" fill="#fff" fill-opacity=".85"/>
+</svg>
