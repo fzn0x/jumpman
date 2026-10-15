@@ -62,4 +62,8 @@ export default defineConfig({
   worker: {
     format: 'es',
   },
+  // Pre-bundle lazily imported deps so the dev server never reloads mid-import.
+  optimizeDeps: {
+    include: ['exifr', 'fflate', 'idb-keyval', 'zustand', 'workbox-window', '@capacitor/core'],
+  },
 })
