@@ -65,11 +65,11 @@ import { links } from '../lib/site'
 
   @media (prefers-reduced-motion: no-preference) {
     .slot {
-      animation: wobble 1.4s var(--ease-out) 0.2s both;
+      animation: slot-settle 1.4s var(--ease-out) 0.2s both;
     }
   }
 
-  @keyframes wobble {
+  @keyframes slot-settle {
     from {
       rotate: -14deg;
       translate: 0 -0.08em;
