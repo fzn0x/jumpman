@@ -161,15 +161,17 @@ export function EditorScreen({
         </>
       }
       center={
-        <Segmented
-          label="Edit scope"
-          value={mode}
-          onChange={(m) => editor.set({ mode: m })}
-          options={[
-            { value: 'global', label: 'Global' },
-            { value: 'individual', label: 'Individual' },
-          ]}
-        />
+        view === 'single' && (
+          <Segmented
+            label="Edit scope"
+            value={mode}
+            onChange={(m) => editor.set({ mode: m })}
+            options={[
+              { value: 'global', label: 'Global' },
+              { value: 'individual', label: 'Individual' },
+            ]}
+          />
+        )
       }
       right={
         <>
@@ -236,7 +238,7 @@ export function EditorScreen({
           onClick={() => editor.set({ tab: t.id, maskLayerId: null })}
           aria-current={tab === t.id ? 'page' : undefined}
           className={cx(
-            'flex min-w-[56px] flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-1.5 text-[11px] font-semibold transition',
+            'flex min-w-[52px] flex-1 flex-col items-center gap-1 rounded-2xl px-1 py-1.5 text-[11px] font-semibold transition',
             tab === t.id ? 'text-white' : 'text-mute hover:text-white',
           )}
         >
