@@ -41,7 +41,10 @@ export default function BatchGrid({ ctx }: { ctx: BatchContext }) {
             size="sm"
             icon={CheckSquare}
             variant={selecting ? 'light' : 'secondary'}
-            onClick={() => (setSelecting(!selecting), editor.set({ gridSelection: [] }))}
+            onClick={() => {
+              setSelecting(!selecting)
+              editor.set({ gridSelection: [] })
+            }}
           >
             {selecting ? `${selection.length} selected` : 'Select'}
           </Button>

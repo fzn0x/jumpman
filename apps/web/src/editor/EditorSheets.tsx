@@ -292,7 +292,10 @@ export function ExportSheet({
   return (
     <Sheet
       open
-      onClose={() => (abort.current?.abort(), onClose())}
+      onClose={() => {
+        abort.current?.abort()
+        onClose()
+      }}
       title={`Export ${ids.length} photo${ids.length > 1 ? 's' : ''}`}
     >
       {!photoIds && gridSelection.length > 0 && (
@@ -500,7 +503,10 @@ function MacrosSheet({ ctx }: { ctx: BatchContext }) {
           variant="primary"
           icon={CircleDot}
           className="w-full"
-          onClick={() => (editor.set({ recording: [] }), close())}
+          onClick={() => {
+            editor.set({ recording: [] })
+            close()
+          }}
         >
           Start recording
         </Button>
