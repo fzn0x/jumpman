@@ -24,7 +24,8 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "presets:validate": "node scripts/validate-presets.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
