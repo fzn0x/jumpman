@@ -119,3 +119,113 @@ describe('describeToEdit', () => {
     expect(JSON.stringify(describeToEdit(text))).toBe(JSON.stringify(describeToEdit(text)))
   })
 })
+
+const temp = (text: string) => describeToEdit(text).basic.temperature ?? 0
+
+describe('intensity and negation', () => {
+  it('handles the headline example', () => {
+    const r = describeToEdit('warmer, softer highlights, slightly faded')
+    expect(r.basic.temperature).toBeGreaterThan(0)
+    expect(r.basic.highlights).toBeLessThan(0)
+    expect(r.basic.fade).toBeGreaterThan(0)
+    expect(r.basic.fade).toBeLessThanOrEqual(12)
+    expect(r.matched.map((m) => m.phrase)).toEqual([
+      'warmer',
+      'softer highlights',
+      'slightly faded',
+    ])
+    expect(r.unmatched).toEqual([])
+  })
+
+  it('orders softeners and intensifiers', () => {
+    const levels = ['very slightly warm', 'slightly warm', 'somewhat warm', 'warm', 'very warm']
+    const values = [...levels, 'extremely warm'].map(temp)
+    for (let k = 1; k < values.length; k++) expect(values[k]).toBeGreaterThan(values[k - 1] ?? 0)
+    expect(temp('slightly warm')).toBe(8)
+    expect(temp('very warm')).toBe(32)
+  })
+
+  it('treats softener synonyms alike', () => {
+    for (const text of ['a little warmer', 'a touch warmer', 'a hint of warmth', 'subtly warm']) {
+      expect(temp(text), text).toBe(temp('slightly warm'))
+    }
+    expect(describeToEdit('a bit of grain').matched).toEqual([
+      { phrase: 'a bit of grain', effect: 'Grain +10' },
+    ])
+  })
+
+  it('scales comparatives', () => {
+    const contrast = (text: string) => describeToEdit(text).basic.contrast ?? 0
+    expect(contrast('more contrast')).toBe(20)
+    expect(contrast('even more contrast')).toBe(30)
+    expect(contrast('much more contrast')).toBe(32)
+    expect(temp('even warmer')).toBe(30)
+  })
+
+  it('softens "not too X" but keeps its direction', () => {
+    expect(temp('not too warm')).toBe(temp('slightly warm'))
+    expect(describeToEdit('bright but not too contrasty').basic.contrast).toBe(8)
+  })
+
+  it('inverts "less X", "reduce X" and friends', () => {
+    expect(describeToEdit('less contrast').basic.contrast).toBeLessThan(0)
+    expect(describeToEdit('less saturated').basic.saturation).toBeLessThan(0)
+    expect(describeToEdit('less color').basic.saturation).toBeLessThan(0)
+    expect(describeToEdit('reduce the contrast').basic.contrast).toBe(-20)
+    expect(describeToEdit('lower exposure').basic.exposure).toBe(-0.3)
+    expect(describeToEdit('low saturation').basic.saturation).toBe(-20)
+    expect(temp('a bit less warm')).toBe(-8)
+    expect(temp('too warm')).toBeLessThan(0)
+  })
+
+  it('routes verbs through tonal nouns', () => {
+    expect(describeToEdit('lift the shadows').basic.shadows).toBe(25)
+    expect(describeToEdit('crush the shadows').basic.shadows).toBe(-25)
+    expect(describeToEdit('tone down the highlights').basic.highlights).toBe(-20)
+    expect(describeToEdit('more blacks').basic.blacks).toBe(-20)
+  })
+
+  it('lets a phrase double as a modifier only when a phrase follows', () => {
+    expect(describeToEdit('light grain').basic).toEqual({ grain: 13 })
+    expect(describeToEdit('light').basic.exposure).toBe(0.3)
+    expect(describeToEdit('very light').basic.exposure).toBe(0.48)
+    expect(describeToEdit('intense contrast').basic.contrast).toBe(36)
+  })
+
+  it('removes effects with "no X" regardless of order', () => {
+    expect(describeToEdit('no vignette').basic).toEqual({})
+    expect(describeToEdit('no vignette').matched).toEqual([
+      { phrase: 'no vignette', effect: 'Vignette 0' },
+    ])
+    const moody = describeToEdit('moody').basic
+    const withoutVignette = describeToEdit('moody, no vignette').basic
+    expect(moody.vignette).toBeLessThan(0)
+    expect(withoutVignette.vignette).toBeUndefined()
+    expect(withoutVignette.contrast).toBe(moody.contrast)
+    expect(describeToEdit('no vignette, moody').basic).toEqual(withoutVignette)
+    expect(describeToEdit('film without grain').basic.grain).toBeUndefined()
+    expect(describeToEdit('cinematic, remove the split toning').split).toBeUndefined()
+    expect(describeToEdit('teal and orange, no teal and orange').split).toBeUndefined()
+  })
+
+  it('weakens toning on negation without flipping it', () => {
+    const full = describeToEdit('teal and orange').split
+    const weaker = describeToEdit('teal and orange, slightly less teal and orange').split
+    expect(weaker?.shadowHue).toBe(full?.shadowHue)
+    expect(weaker?.shadowSaturation).toBeLessThan(full?.shadowSaturation ?? 0)
+    expect(describeToEdit('less teal and orange').split).toBeUndefined()
+  })
+
+  it('reports dangling modifiers as not understood', () => {
+    expect(describeToEdit('very').unmatched).toEqual(['very'])
+    expect(describeToEdit('warm, really zebra').unmatched).toEqual(['really zebra'])
+  })
+
+  it('caps stacked intensifiers and stays fast on long input', () => {
+    expect(temp('very very very very extremely warm')).toBe(60)
+    const long = Array.from({ length: 300 }, () => 'a little bit').join(' ')
+    const r = describeToEdit(`${long} warmer`)
+    expect(r.matched).toHaveLength(1)
+    expect(r.unmatched).toEqual([])
+  })
+})

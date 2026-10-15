@@ -15,7 +15,15 @@ import {
   type SplitParams,
 } from '../model/layers.ts'
 import { clamp, round } from '../util.ts'
-import { FILLERS, LEXICON, type LexEntry, type ResetTarget, SOFT_SEPARATORS } from './lexicon.ts'
+import {
+  FILLERS,
+  LEXICON,
+  type LexEntry,
+  MODIFIERS,
+  type Modifier,
+  type ResetTarget,
+  SOFT_SEPARATORS,
+} from './lexicon.ts'
 
 export interface DescribeMatch {
   /** The words that were understood, e.g. "softer highlights". */
@@ -55,19 +63,27 @@ function indexPhrases<T>(pairs: Iterable<readonly [string, T]>): PhraseIndex<T> 
 }
 
 const LEX = indexPhrases(LEXICON.flatMap((e) => e.phrases.map((p) => [p, e] as const)))
+const MODS = indexPhrases(MODIFIERS)
 
-/** Longest indexed phrase starting at token `i`. */
-function longestMatch<T>(
+/** Caps stacked intensifiers ("very very extremely") before slider clamping kicks in. */
+const MAX_FACTOR = 3
+
+/** Every indexed phrase starting at token `i`, longest first. */
+function allMatches<T>(
   index: PhraseIndex<T>,
   tokens: readonly string[],
   i: number,
-): { value: T; end: number } | undefined {
+): { value: T; end: number }[] {
+  const out: { value: T; end: number }[] = []
   for (let n = Math.min(index.maxWords, tokens.length - i); n > 0; n--) {
     const value = index.byPhrase.get(tokens.slice(i, i + n).join(' '))
-    if (value !== undefined) return { value, end: i + n }
+    if (value !== undefined) out.push({ value, end: i + n })
   }
-  return undefined
+  return out
 }
+
+const longestMatch = <T>(index: PhraseIndex<T>, tokens: readonly string[], i: number) =>
+  allMatches(index, tokens, i)[0]
 
 /** Lowercases, folds British spellings and splits on hard separators into word lists. */
 function clauses(text: string): string[][] {
@@ -95,9 +111,74 @@ interface Hit {
   reset: boolean
 }
 
-function parseAt(tokens: readonly string[], i: number): Hit | undefined {
-  const m = longestMatch(LEX, tokens, i)
-  return m && { end: m.end, entry: m.value, factor: 1, reset: false }
+/** A phrase reached after at least one modifier, with the modifiers met on the way. */
+interface Tail {
+  end: number
+  entry: LexEntry
+  mods: Modifier[]
+}
+
+/**
+ * Best phrase reachable from token `j` through more modifiers and fillers
+ * ("of" in "a bit of grain"). Memoized per clause, so modifier-heavy input stays linear.
+ */
+function tailFrom(
+  tokens: readonly string[],
+  j: number,
+  memo: Map<number, Tail | undefined>,
+): Tail | undefined {
+  if (memo.has(j)) return memo.get(j)
+  const lex = longestMatch(LEX, tokens, j)
+  let best: Tail | undefined = lex && { end: lex.end, entry: lex.value, mods: [] }
+  for (const m of allMatches(MODS, tokens, j)) {
+    const t = tailFrom(tokens, m.end, memo)
+    if (t && (!best || t.end > best.end)) best = { ...t, mods: [m.value, ...t.mods] }
+  }
+  if (FILLERS.has(tokens[j] ?? '')) {
+    const t = tailFrom(tokens, j + 1, memo)
+    if (t && (!best || t.end > best.end)) best = t
+  }
+  memo.set(j, best)
+  return best
+}
+
+/** Folds modifiers left to right; an intensifier before a softener ("very slightly") sharpens it. */
+function combine(mods: readonly Modifier[]): Pick<Hit, 'factor' | 'reset'> {
+  let factor = 1
+  let reset = false
+  for (let k = 0; k < mods.length; k++) {
+    const m = mods[k]
+    const next = mods[k + 1]
+    if (m === undefined) continue
+    if (m === 'reset') reset = true
+    else if (m > 1 && typeof next === 'number' && next > 0 && next < 1) {
+      factor *= next ** m
+      k++
+    } else factor *= m
+  }
+  return { factor: clamp(factor, -MAX_FACTOR, MAX_FACTOR), reset }
+}
+
+function parseAt(
+  tokens: readonly string[],
+  i: number,
+  memo: Map<number, Tail | undefined>,
+): Hit | undefined {
+  const plain = longestMatch(LEX, tokens, i)
+  let best: Hit | undefined = plain && {
+    end: plain.end,
+    entry: plain.value,
+    factor: 1,
+    reset: false,
+  }
+  // A listed phrase wins ties, so "more blacks" keeps its own meaning (deeper, not lifted).
+  for (const m of allMatches(MODS, tokens, i)) {
+    const t = tailFrom(tokens, m.end, memo)
+    if (t && (!best || t.end > best.end)) {
+      best = { end: t.end, entry: t.entry, ...combine([m.value, ...t.mods]) }
+    }
+  }
+  return best
 }
 
 /** Running sum of hue vectors, so toning from several phrases blends instead of overwriting. */
@@ -282,6 +363,7 @@ export function describeToEdit(text: string): DescribeResult {
 
   for (const tokens of clauses(text)) {
     // Unknown words are grouped into runs; fillers inside a run are kept for readability.
+    const memo = new Map<number, Tail | undefined>()
     let runStart = -1
     let runEnd = -1
     const flush = () => {
@@ -290,7 +372,7 @@ export function describeToEdit(text: string): DescribeResult {
     }
     let i = 0
     while (i < tokens.length) {
-      const hit = parseAt(tokens, i)
+      const hit = parseAt(tokens, i, memo)
       if (hit) {
         flush()
         matched.push({ phrase: tokens.slice(i, hit.end).join(' '), effect: apply(acc, hit) })
