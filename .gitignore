@@ -44,3 +44,6 @@ playwright-report/
 
 # local agent worktrees
 .claude/
+
+# local signing material (never commit)
+.secrets/
