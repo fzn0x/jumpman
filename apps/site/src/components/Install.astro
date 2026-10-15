@@ -1,0 +1,495 @@
+---
+import { links } from '../lib/site'
+import Icon, { type IconName } from './Icon.astro'
+
+interface Option {
+  id: string
+  tab: string
+  icon: IconName
+  title: string
+  steps: string[]
+  action?: { label: string; href: string; icon: IconName; external?: boolean }
+  code?: string[]
+  note?: string
+  /** One line shown next to the action. */
+  summary?: string
+}
+
+const options: Option[] = [
+  {
+    id: 'install-web',
+    tab: 'Web',
+    icon: 'globe',
+    title: 'In your browser',
+    steps: [
+      'Open the web app in any modern browser, on desktop or mobile.',
+      'Start editing right away. There is nothing to sign up for.',
+      'To install it, choose <strong>Install app</strong> (or <strong>Add to Home screen</strong>) from your browser’s menu. It opens in its own window and works offline.',
+    ],
+    summary: 'Runs in any modern browser with WebGL2, on desktop and mobile.',
+    action: { label: 'Open the web app', href: links.app, icon: 'arrow-right' },
+  },
+  {
+    id: 'install-android',
+    tab: 'Android',
+    icon: 'android',
+    title: 'On Android',
+    steps: [
+      'Download the latest <code>.apk</code> from GitHub Releases.',
+      'Open the file. If Android asks, allow your browser to install unknown apps.',
+      'Tap <strong>Install</strong>, then open Jumpman from your app drawer.',
+    ],
+    summary: 'A free .apk on GitHub Releases. No store account needed.',
+    action: { label: 'Download for Android', href: links.releases, icon: 'download', external: true },
+  },
+  {
+    id: 'install-ios',
+    tab: 'iPhone & iPad',
+    icon: 'phone',
+    title: 'On iPhone and iPad',
+    steps: [
+      'Open the web app in <strong>Safari</strong>.',
+      'Tap the <strong>Share</strong> button.',
+      'Choose <strong>Add to Home Screen</strong>. Jumpman opens full screen and works offline.',
+    ],
+    summary: 'Installs straight from Safari. No App Store needed.',
+    action: { label: 'Open the web app', href: links.app, icon: 'arrow-right' },
+  },
+  {
+    id: 'install-self-host',
+    tab: 'Self-host',
+    icon: 'server',
+    title: 'On your own server',
+    steps: [
+      'Download <code>jumpman-web-&lt;version&gt;.zip</code> from GitHub Releases.',
+      'Unzip it.',
+      'Serve the folder with any static file server: nginx, Caddy, GitHub Pages, or <code>python3 -m http.server</code> for a quick test.',
+    ],
+    note: 'Serve it over HTTPS (or from localhost) so the app can install and work offline.',
+    summary: 'One folder of static files. No database, no backend.',
+    action: { label: 'Go to Releases', href: links.releases, icon: 'arrow-up-right', external: true },
+  },
+  {
+    id: 'install-source',
+    tab: 'From source',
+    icon: 'terminal',
+    title: 'From source',
+    steps: [
+      'You need Node.js 22.12 or newer and pnpm.',
+      'Clone the repository, install dependencies and start the dev server.',
+    ],
+    code: [
+      'git clone https://github.com/fzn0x/jumpman.git',
+      'cd jumpman',
+      'pnpm install',
+      'pnpm dev',
+    ],
+    action: { label: 'View on GitHub', href: links.repo, icon: 'github', external: true },
+  },
+]
+---
+
+<section class="install section" id="install" aria-labelledby="install-title">
+  <div class="container">
+    <div class="section-head head">
+      <h2 id="install-title" class="display-l">Install it anywhere.</h2>
+      <p class="lead">
+        Use it in the browser, add it to your home screen, or host it yourself. Same app, same offline
+        engine, everywhere.
+      </p>
+    </div>
+
+    <div class="tabs dark" data-tabs>
+      <div class="tablist" role="tablist" aria-label="Ways to install Jumpman" hidden>
+        {
+          options.map((o, i) => (
+            <button
+              type="button"
+              role="tab"
+              id={`${o.id}-tab`}
+              aria-controls={o.id}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              tabindex={i === 0 ? 0 : -1}
+            >
+              <Icon name={o.icon} size={18} />
+              {o.tab}
+            </button>
+          ))
+        }
+      </div>
+
+      {
+        options.map((o) => (
+          <section class="panel" id={o.id} role="tabpanel" aria-labelledby={`${o.id}-tab`} tabindex="0">
+            <div class="panel-copy">
+              <h3>{o.title}</h3>
+              <ol class="steps" role="list">
+                {o.steps.map((step) => (
+                  <li>
+                    <span set:html={step} />
+                  </li>
+                ))}
+              </ol>
+              {o.note && <p class="note">{o.note}</p>}
+            </div>
+            <div class="panel-side">
+              {o.code && (
+                <div class="code">
+                  <pre><code>{o.code.map((line) => (
+                    <span class="line">{line}</span>
+                  ))}</code></pre>
+                  <button type="button" class="copy" data-copy={o.code.join('\n')} hidden>
+                    <Icon name="copy" size={16} />
+                    <span data-copy-label>Copy</span>
+                  </button>
+                </div>
+              )}
+              {o.summary && (
+                <div class="summary">
+                  <span class="summary-icon">
+                    <Icon name={o.icon} size={28} />
+                  </span>
+                  <p>{o.summary}</p>
+                </div>
+              )}
+              {o.action && (
+                <a
+                  class:list={['btn', o.code ? 'btn--ghost' : 'btn--primary', 'btn--lg']}
+                  href={o.action.href}
+                  rel={o.action.external ? 'noopener' : undefined}
+                >
+                  {o.action.icon === 'github' && <Icon name="github" />}
+                  {o.action.label}
+                  {o.action.icon !== 'github' && <Icon name={o.action.icon} />}
+                </a>
+              )}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+  {
+    const root = document.querySelector('[data-tabs]')
+    if (root) {
+      const tabs = Array.from(root.querySelectorAll('[role="tab"]'))
+      const panels = tabs.map((t) => document.getElementById(t.getAttribute('aria-controls')))
+      const select = (index, focus) => {
+        tabs.forEach((tab, i) => {
+          const on = i === index
+          tab.setAttribute('aria-selected', String(on))
+          tab.tabIndex = on ? 0 : -1
+          panels[i].hidden = !on
+        })
+        if (focus) tabs[index].focus()
+      }
+      root.querySelector('[role="tablist"]').hidden = false
+      root.classList.add('is-enhanced')
+      tabs.forEach((tab, i) => {
+        tab.addEventListener('click', () => select(i))
+        tab.addEventListener('keydown', (e) => {
+          const last = tabs.length - 1
+          const next = {
+            ArrowRight: i === last ? 0 : i + 1,
+            ArrowLeft: i === 0 ? last : i - 1,
+            Home: 0,
+            End: last,
+          }[e.key]
+          if (next !== undefined) {
+            e.preventDefault()
+            select(next, true)
+          }
+        })
+      })
+      const ua = navigator.userAgent
+      let initial = /Android/i.test(ua)
+        ? 1
+        : /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
+          ? 2
+          : 0
+      const fromHash = panels.findIndex((p) => p && '#' + p.id === location.hash)
+      if (fromHash >= 0) initial = fromHash
+      select(initial)
+    }
+
+    for (const button of document.querySelectorAll('[data-copy]')) {
+      if (!navigator.clipboard) continue
+      button.hidden = false
+      const label = button.querySelector('[data-copy-label]')
+      button.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(button.getAttribute('data-copy'))
+          label.textContent = 'Copied'
+        } catch {
+          label.textContent = 'Press Ctrl+C'
+        }
+        setTimeout(() => {
+          label.textContent = 'Copy'
+        }, 2000)
+      })
+    }
+  }
+</script>
+
+<style>
+  .head {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 1.5rem 3rem;
+  }
+
+  .tabs {
+    padding: clamp(0.75rem, 0.5rem + 1vw, 1rem);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 30px 60px -30px rgb(70 0 10 / 0.5);
+  }
+
+  .tablist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    padding: 0.375rem;
+    border-radius: calc(var(--radius-lg) - 0.5rem);
+    background: var(--ink-raised);
+  }
+
+  .tablist[hidden] {
+    display: none;
+  }
+
+  [role='tab'] {
+    flex: 1 1 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 1rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--mist);
+    font: 600 0.95rem / 1.2 var(--font-body);
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  [role='tab']:hover {
+    color: var(--white);
+    background: rgb(255 255 255 / 0.06);
+  }
+
+  [role='tab'][aria-selected='true'] {
+    background: var(--red);
+    color: var(--white);
+  }
+
+  .panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 2rem clamp(2rem, 4vw, 4rem);
+    align-items: center;
+    padding: clamp(1.5rem, 1rem + 3vw, 3.5rem) clamp(1rem, 0.5rem + 3vw, 3rem);
+    border-radius: calc(var(--radius-lg) - 0.5rem);
+  }
+
+  .panel + .panel {
+    border-top: 1px solid var(--hairline);
+  }
+
+  .is-enhanced .panel + .panel {
+    border-top: 0;
+  }
+
+  .panel[hidden] {
+    display: none;
+  }
+
+  .panel:focus-visible {
+    outline-offset: -3px;
+  }
+
+  h3 {
+    font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem);
+    letter-spacing: -0.03em;
+  }
+
+  .steps {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    counter-reset: step;
+  }
+
+  .steps li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.9rem;
+    color: var(--mist);
+    counter-increment: step;
+  }
+
+  .steps li::before {
+    content: counter(step);
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-top: -0.05rem;
+    border-radius: 50%;
+    background: var(--ink-raised);
+    color: var(--white);
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .steps :global(strong) {
+    color: var(--white);
+    font-weight: 600;
+  }
+
+  .steps :global(code),
+  .note {
+    font-size: 0.9em;
+  }
+
+  .steps :global(code) {
+    padding: 0.1em 0.4em;
+    border-radius: 0.35rem;
+    background: var(--ink-raised);
+    color: var(--white);
+    overflow-wrap: anywhere;
+  }
+
+  .note {
+    margin-top: 1.25rem;
+    padding-left: 2.65rem;
+    color: var(--gray);
+  }
+
+  .panel-side {
+    display: grid;
+    justify-items: start;
+    gap: 1.25rem;
+  }
+
+  .summary {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 1.25rem;
+    width: 100%;
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+    background: var(--ink-raised);
+  }
+
+  .summary-icon {
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 1rem;
+    background: var(--ink);
+    color: var(--salmon);
+  }
+
+  .summary p {
+    font-size: 1.125rem;
+    font-weight: 550;
+    line-height: 1.4;
+  }
+
+  .code {
+    position: relative;
+    width: 100%;
+    border-radius: 1rem;
+    background: var(--ink-raised);
+  }
+
+  pre {
+    margin: 0;
+    padding: 1.25rem 1.25rem 1.25rem 1.5rem;
+    overflow-x: auto;
+    line-height: 1.9;
+    font-size: 0.9rem;
+  }
+
+  .line {
+    display: block;
+    color: var(--white);
+  }
+
+  .line::before {
+    content: '$ ';
+    color: var(--gray);
+    user-select: none;
+  }
+
+  .copy {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--mist);
+    font: 600 0.8125rem / 1.2 var(--font-body);
+    cursor: pointer;
+  }
+
+  .copy[hidden] {
+    display: none;
+  }
+
+  .copy:hover {
+    color: var(--white);
+  }
+
+  @media (max-width: 56rem) {
+    .head,
+    .panel {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 30rem) {
+    [role='tab'] {
+      padding-inline: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    [role='tab'] :global(svg) {
+      display: none;
+    }
+
+    .summary {
+      gap: 1rem;
+      padding: 1.25rem;
+    }
+
+    .summary-icon {
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .summary p {
+      font-size: 1.0625rem;
+    }
+
+    .panel-side .btn {
+      width: 100%;
+    }
+  }
+</style>
