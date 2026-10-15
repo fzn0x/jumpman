@@ -1,8 +1,11 @@
 ---
+import CtaBand from '../components/CtaBand.astro'
 import FeatureSpread from '../components/FeatureSpread.astro'
 import Hero from '../components/Hero.astro'
 import HowItWorks from '../components/HowItWorks.astro'
+import Install from '../components/Install.astro'
 import OnlyInJumpman from '../components/OnlyInJumpman.astro'
+import Privacy from '../components/Privacy.astro'
 import Roadmap from '../components/Roadmap.astro'
 import { featureGroup } from '../data/features'
 import { screen } from '../data/screens'
@@ -28,6 +31,9 @@ import Base from '../layouts/Base.astro'
   </section>
   <OnlyInJumpman />
   <Roadmap />
+  <Privacy />
+  <Install />
+  <CtaBand />
 </Base>
 
 <style>

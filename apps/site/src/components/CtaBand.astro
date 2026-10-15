@@ -1,0 +1,89 @@
+---
+import { links } from '../lib/site'
+import Icon from './Icon.astro'
+---
+
+<section class="band" aria-labelledby="band-title">
+  <div class="container inner">
+    <h2 id="band-title" class="display-xl title">Stop editing one photo at a time.</h2>
+    <div class="aside">
+      <p>
+        Open Jumpman in your browser and finish your next set tonight. Free, open source, and yours to
+        keep, even offline.
+      </p>
+      <div class="ctas">
+        <a class="btn btn--light btn--lg" href={links.app}>
+          Open the web app
+          <Icon name="arrow-right" />
+        </a>
+        <a class="btn btn--lg" href={links.releases} rel="noopener">
+          <Icon name="android" />
+          Download for Android
+        </a>
+        <a class="btn btn--ghost btn--lg" href={links.repo} rel="noopener">
+          <Icon name="star" />
+          Star on GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .band {
+    --focus: var(--white);
+    --fg: var(--white);
+    padding-block: clamp(4.5rem, 3rem + 7vw, 8.5rem);
+    background: var(--red);
+    color: var(--white);
+  }
+
+  .band ::selection {
+    background: var(--white);
+    color: var(--red);
+  }
+
+  .inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 2.5rem clamp(2rem, 5vw, 5rem);
+  }
+
+  .title {
+    font-size: clamp(3rem, 1.2rem + 6vw, 7rem);
+  }
+
+  .aside {
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  p {
+    font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+    line-height: 1.5;
+    max-width: 30rem;
+  }
+
+  .ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .ctas .btn--ghost {
+    --btn-bg-hover: rgb(255 255 255 / 0.12);
+  }
+
+  @media (max-width: 62rem) {
+    .inner {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 30rem) {
+    .ctas .btn {
+      flex: 1 1 100%;
+    }
+  }
+</style>
