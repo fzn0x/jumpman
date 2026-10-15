@@ -1,6 +1,6 @@
 {
   "name": "@jumpman/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Framework-agnostic batch photo editing engine: edit model, color science, analysis and file formats.",
   "type": "module",

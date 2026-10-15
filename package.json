@@ -1,6 +1,6 @@
 {
   "name": "jumpman",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Edit multiple photos at once. Open-source, offline-first batch photo editor for web and mobile.",
   "type": "module",
