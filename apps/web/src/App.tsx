@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { ImportStatus, Toaster, Wordmark } from './components/Chrome.tsx'
 import { requestPersistence } from './lib/db.ts'
+import { handleLaunchQueue } from './lib/launch.ts'
+import { isNative } from './lib/platform.ts'
 import { CollectionScreen } from './screens/CollectionScreen.tsx'
 import { LibraryScreen } from './screens/LibraryScreen.tsx'
 import { initLibrary, useLibrary } from './state/library.ts'
@@ -8,6 +10,18 @@ import { useRoute } from './state/router.ts'
 
 const EditorScreen = lazy(() =>
   import('./screens/EditorScreen.tsx').then((m) => ({ default: m.EditorScreen })),
+)
+const PresetsScreen = lazy(() =>
+  import('./screens/PresetsScreen.tsx').then((m) => ({ default: m.PresetsScreen })),
+)
+const SettingsScreen = lazy(() =>
+  import('./screens/SettingsScreen.tsx').then((m) => ({ default: m.SettingsScreen })),
+)
+const PresetLinkDialog = lazy(() =>
+  import('./components/PresetLinkDialog.tsx').then((m) => ({ default: m.PresetLinkDialog })),
+)
+const UpdatePrompt = lazy(() =>
+  import('./components/UpdatePrompt.tsx').then((m) => ({ default: m.UpdatePrompt })),
 )
 
 function Splash() {
@@ -22,7 +36,10 @@ export function App() {
   const ready = useLibrary((s) => s.ready)
   const route = useRoute()
   useEffect(() => {
-    void initLibrary().then(() => requestPersistence())
+    void initLibrary().then(() => {
+      handleLaunchQueue()
+      void requestPersistence()
+    })
   }, [])
   if (!ready) return <Splash />
   return (
@@ -33,6 +50,12 @@ export function App() {
         {route.name === 'editor' && (
           <EditorScreen key={route.batchId} batchId={route.batchId} view={route.view} />
         )}
+        {route.name === 'presets' && <PresetsScreen />}
+        {route.name === 'settings' && <SettingsScreen />}
+      </Suspense>
+      <Suspense fallback={null}>
+        <PresetLinkDialog />
+        {!isNative() && <UpdatePrompt />}
       </Suspense>
       <ImportStatus />
       <Toaster />
