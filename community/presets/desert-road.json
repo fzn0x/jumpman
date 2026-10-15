@@ -1,0 +1,48 @@
+{
+  "schema": "jumpman.preset/1",
+  "id": "community-desert-road",
+  "name": "Desert Road",
+  "author": "jumpman-community",
+  "description": "Dusty ambers, faded blacks and road-trip warmth.",
+  "tags": ["warm", "film", "travel"],
+  "createdAt": 1790899200000,
+  "layers": [
+    {
+      "id": "base",
+      "name": "Global adjust",
+      "enabled": true,
+      "opacity": 1,
+      "kind": "basic",
+      "params": {
+        "exposure": 0,
+        "brightness": 0,
+        "contrast": 8,
+        "highlights": -15,
+        "shadows": 0,
+        "whites": 0,
+        "blacks": 0,
+        "temperature": 22,
+        "tint": 0,
+        "vibrance": 0,
+        "saturation": -10,
+        "fade": 18,
+        "vignette": 0,
+        "grain": 0
+      }
+    },
+    {
+      "id": "l_mv9rxjjx3sfxtgh",
+      "name": "Split toning",
+      "enabled": true,
+      "opacity": 1,
+      "kind": "split",
+      "params": {
+        "shadowHue": 200,
+        "shadowSaturation": 18,
+        "highlightHue": 38,
+        "highlightSaturation": 30,
+        "balance": 0
+      }
+    }
+  ]
+}

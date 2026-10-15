@@ -1,0 +1,93 @@
+{
+  "schema": "jumpman.preset/1",
+  "id": "community-kyoto-blossom",
+  "name": "Kyoto Blossom",
+  "author": "jumpman-community",
+  "description": "Cherry-blossom pinks with a quiet, misty sky.",
+  "tags": ["pink", "spring", "travel"],
+  "createdAt": 1790812800000,
+  "layers": [
+    {
+      "id": "base",
+      "name": "Global adjust",
+      "enabled": true,
+      "opacity": 1,
+      "kind": "basic",
+      "params": {
+        "exposure": 0.2,
+        "brightness": 0,
+        "contrast": 0,
+        "highlights": -25,
+        "shadows": 15,
+        "whites": 0,
+        "blacks": 0,
+        "temperature": 4,
+        "tint": 12,
+        "vibrance": 10,
+        "saturation": 0,
+        "fade": 0,
+        "vignette": 0,
+        "grain": 0
+      }
+    },
+    {
+      "id": "l_mv9rxjjx1v26fcc",
+      "name": "Spring Pink",
+      "enabled": true,
+      "opacity": 0.7,
+      "kind": "lut",
+      "params": {
+        "lutId": "builtin:spring-pink"
+      }
+    },
+    {
+      "id": "l_mv9rxjjx2q06spx",
+      "name": "HSL",
+      "enabled": true,
+      "opacity": 1,
+      "kind": "hsl",
+      "params": {
+        "red": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "orange": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "yellow": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "green": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "aqua": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "blue": {
+          "hue": -10,
+          "saturation": -25,
+          "luminance": 15
+        },
+        "purple": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "magenta": {
+          "hue": 0,
+          "saturation": 15,
+          "luminance": 5
+        }
+      }
+    }
+  ]
+}

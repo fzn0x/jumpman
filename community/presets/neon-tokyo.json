@@ -1,0 +1,44 @@
+{
+  "schema": "jumpman.preset/1",
+  "id": "community-neon-tokyo",
+  "name": "Neon Tokyo",
+  "author": "jumpman-community",
+  "description": "Night streets in magenta and cyan.",
+  "tags": ["night", "street", "cinematic"],
+  "createdAt": 1790985600000,
+  "layers": [
+    {
+      "id": "base",
+      "name": "Global adjust",
+      "enabled": true,
+      "opacity": 1,
+      "kind": "basic",
+      "params": {
+        "exposure": 0.15,
+        "brightness": 0,
+        "contrast": 10,
+        "highlights": 0,
+        "shadows": 20,
+        "whites": 0,
+        "blacks": 0,
+        "temperature": 0,
+        "tint": 0,
+        "vibrance": 0,
+        "saturation": 0,
+        "fade": 0,
+        "vignette": 0,
+        "grain": 0
+      }
+    },
+    {
+      "id": "l_mv9rxjjx4kt3752",
+      "name": "Neon Night",
+      "enabled": true,
+      "opacity": 1,
+      "kind": "lut",
+      "params": {
+        "lutId": "builtin:cyber"
+      }
+    }
+  ]
+}

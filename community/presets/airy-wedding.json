@@ -1,0 +1,83 @@
+{
+  "schema": "jumpman.preset/1",
+  "id": "community-airy-wedding",
+  "name": "Airy Wedding",
+  "author": "jumpman-community",
+  "description": "Bright, creamy and skin-friendly.",
+  "tags": ["wedding", "bright", "portrait"],
+  "createdAt": 1791244800000,
+  "layers": [
+    {
+      "id": "base",
+      "name": "Global adjust",
+      "enabled": true,
+      "opacity": 1,
+      "kind": "basic",
+      "params": {
+        "exposure": 0.35,
+        "brightness": 0,
+        "contrast": -12,
+        "highlights": -20,
+        "shadows": 20,
+        "whites": 0,
+        "blacks": 0,
+        "temperature": 6,
+        "tint": 0,
+        "vibrance": 0,
+        "saturation": 0,
+        "fade": 8,
+        "vignette": 0,
+        "grain": 0
+      }
+    },
+    {
+      "id": "l_mv9rxjjx7yqwt6i",
+      "name": "HSL",
+      "enabled": true,
+      "opacity": 1,
+      "kind": "hsl",
+      "params": {
+        "red": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "orange": {
+          "hue": 3,
+          "saturation": -12,
+          "luminance": 12
+        },
+        "yellow": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "green": {
+          "hue": 15,
+          "saturation": -30,
+          "luminance": 0
+        },
+        "aqua": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "blue": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "purple": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "magenta": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        }
+      }
+    }
+  ]
+}

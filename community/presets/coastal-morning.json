@@ -1,0 +1,83 @@
+{
+  "schema": "jumpman.preset/1",
+  "id": "community-coastal-morning",
+  "name": "Coastal Morning",
+  "author": "jumpman-community",
+  "description": "Clean blues and soft sand for beach sets.",
+  "tags": ["bright", "summer", "beach"],
+  "createdAt": 1791072000000,
+  "layers": [
+    {
+      "id": "base",
+      "name": "Global adjust",
+      "enabled": true,
+      "opacity": 1,
+      "kind": "basic",
+      "params": {
+        "exposure": 0.3,
+        "brightness": 0,
+        "contrast": 0,
+        "highlights": -30,
+        "shadows": 10,
+        "whites": 10,
+        "blacks": 0,
+        "temperature": -4,
+        "tint": 0,
+        "vibrance": 15,
+        "saturation": 0,
+        "fade": 0,
+        "vignette": 0,
+        "grain": 0
+      }
+    },
+    {
+      "id": "l_mv9rxjjx5wwiy6y",
+      "name": "HSL",
+      "enabled": true,
+      "opacity": 1,
+      "kind": "hsl",
+      "params": {
+        "red": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "orange": {
+          "hue": 0,
+          "saturation": -10,
+          "luminance": 8
+        },
+        "yellow": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "green": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "aqua": {
+          "hue": 5,
+          "saturation": 15,
+          "luminance": 5
+        },
+        "blue": {
+          "hue": -5,
+          "saturation": 10,
+          "luminance": -5
+        },
+        "purple": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "magenta": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        }
+      }
+    }
+  ]
+}
