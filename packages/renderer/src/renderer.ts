@@ -53,6 +53,9 @@ interface Target {
   h: number
 }
 
+/** Above this many pixels, intermediate targets fall back to 8-bit (4 targets × 8 B/px adds up). */
+const FLOAT_TARGET_MAX_PIXELS = 12_000_000
+
 const MASK_TYPES: Record<Mask['type'], number> = {
   linear: 1,
   radial: 2,
@@ -270,7 +273,8 @@ export class GLRenderer {
     }
     const tex = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, tex)
-    const float = this.info.floatTargets && !bytes
+    // Half-float targets give smoother gradients; very large exports use 8-bit to save GPU memory.
+    const float = this.info.floatTargets && !bytes && w * h <= FLOAT_TARGET_MAX_PIXELS
     const internal = float ? gl.RGBA16F : gl.RGBA8
     const type = float ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE
     gl.texImage2D(gl.TEXTURE_2D, 0, internal, w, h, 0, gl.RGBA, type, null)
