@@ -569,7 +569,8 @@ export class GLRenderer {
     return { r, g, b, l, max }
   }
 
-  dispose(): void {
+  /** Frees GPU resources. Pass false to keep the canvas usable (e.g. React remounts). */
+  dispose(loseContext = true): void {
     const gl = this.gl
     for (const t of this.targets) {
       gl.deleteFramebuffer(t.fb)
@@ -580,6 +581,10 @@ export class GLRenderer {
     if (this.curveTex) gl.deleteTexture(this.curveTex)
     this.targets = []
     this.lutTextures.clear()
-    gl.getExtension('WEBGL_lose_context')?.loseContext()
+    this.image = null
+    this.imageKey = null
+    this.curveTex = null
+    this.programs.clear()
+    if (loseContext) gl.getExtension('WEBGL_lose_context')?.loseContext()
   }
 }
