@@ -21,7 +21,9 @@
     "dev:site": "pnpm --filter @jumpman/site dev",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write ."
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
