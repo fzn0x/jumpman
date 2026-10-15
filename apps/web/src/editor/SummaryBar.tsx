@@ -71,7 +71,7 @@ export function SummaryBar({ ctx, withHistory }: { ctx: BatchContext; withHistor
             icon={Undo2}
             size="sm"
             label="Undo"
-            disabled={!history?.past.length}
+            disabled={!(history?.past.length || history?.pending)}
             onClick={() => undo(ctx.batch.id)}
           />
           <IconButton

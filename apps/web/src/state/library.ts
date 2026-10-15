@@ -494,8 +494,11 @@ export function commit(batchId: string): void {
 
 export function undo(batchId: string): void {
   const h = get().histories[batchId]
-  const prev = h?.past[h.past.length - 1]
-  if (!h || !prev) return
+  if (!h) return
+  // An unfinished gesture (e.g. a dial still settling) is undone first.
+  const prev = h.pending ?? h.past[h.past.length - 1]
+  if (!prev) return
+  const past = h.pending ? h.past : h.past.slice(0, -1)
   set((s) => {
     const b = s.batches[batchId]
     if (!b) return {}
@@ -503,12 +506,7 @@ export function undo(batchId: string): void {
       batches: { ...s.batches, [batchId]: { ...b, look: prev, updatedAt: Date.now() } },
       histories: {
         ...s.histories,
-        [batchId]: {
-          past: h.past.slice(0, -1),
-          present: prev,
-          future: [h.present, ...h.future],
-          pending: null,
-        },
+        [batchId]: { past, present: prev, future: [h.present, ...h.future], pending: null },
       },
     }
   })

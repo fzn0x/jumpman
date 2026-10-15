@@ -178,7 +178,7 @@ export function EditorScreen({
           <IconButton
             icon={Undo2}
             label="Undo"
-            disabled={!history?.past.length}
+            disabled={!(history?.past.length || history?.pending)}
             onClick={() => undo(batchId)}
             className="max-lg:hidden"
           />
