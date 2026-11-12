@@ -16,9 +16,9 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@capacitor/android": "^8.5.3",
-    "@capacitor/core": "^8.5.3",
-    "@capacitor/filesystem": "^8.1.4",
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/filesystem": "^8.1.5",
     "@capacitor/share": "^8.0.3",
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource-variable/inter": "^5.3.0",
@@ -27,23 +27,23 @@
     "exifr": "^7.1.3",
     "fflate": "^0.8.3",
     "idb-keyval": "^6.3.0",
-    "lucide-react": "^1.53.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "zustand": "^5.0.15"
+    "lucide-react": "^1.68.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zustand": "^5.0.16"
   },
   "devDependencies": {
-    "@babel/core": "^8.0.7",
-    "@capacitor/cli": "^8.5.3",
-    "@playwright/test": "^1.64.0",
-    "@rolldown/plugin-babel": "^0.2.4",
-    "@tailwindcss/vite": "^4.3.3",
+    "@babel/core": "^8.1.0",
+    "@capacitor/cli": "^8.6.0",
+    "@playwright/test": "^1.64.1",
+    "@rolldown/plugin-babel": "^0.3.0",
+    "@tailwindcss/vite": "^4.3.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
+    "@vitejs/plugin-react": "^6.2.1",
     "babel-plugin-react-compiler": "^1.0.0",
-    "tailwindcss": "^4.3.3",
-    "vite": "^8.3.4",
+    "tailwindcss": "^4.3.4",
+    "vite": "^8.3.5",
     "vite-plugin-pwa": "^2.0.0",
     "workbox-window": "^7.4.1"
   }
