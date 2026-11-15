@@ -10,7 +10,11 @@ const trust = ['Free & open source', 'Works offline', 'No account', 'Your photos
 <section class="hero" aria-labelledby="hero-title">
   <div class="container grid">
     <h1 id="hero-title" class="display-xl title">
-      Edit <span class="red">Multiple</span> photos at once.
+      <span class="w" style="--w:0">Edit</span>{' '}
+      <span class="w red" style="--w:1">Multiple</span>{' '}
+      <span class="w" style="--w:2">photos</span>{' '}
+      <span class="w" style="--w:3">at</span>{' '}
+      <span class="w" style="--w:4">once.</span>
     </h1>
     <div class="copy">
       <p class="lead">
@@ -42,7 +46,7 @@ const trust = ['Free & open source', 'Works offline', 'No account', 'Your photos
       <Phone screen={screen('editor')} priority="high" class="p p-front" />
       <p class="callout" aria-hidden="true">
         <span class="dot"></span>
-        One edit · 10 photos
+        One edit · <span data-count-to="10" data-count-delay="900">10</span> photos
       </p>
     </div>
   </div>
@@ -190,8 +194,31 @@ const trust = ['Free & open source', 'Works offline', 'No account', 'Your photos
     box-shadow: 0 0 0 3px rgb(224 0 0 / 0.3);
   }
 
-  /* The one authored moment: the batch fans out from a single stack. */
+  .w {
+    display: inline-block;
+  }
+
+  /* The one authored moment: the headline rises word by word, then the batch fans out from a
+     single stack. */
   @media (prefers-reduced-motion: no-preference) {
+    .w {
+      animation: rise 0.9s var(--ease-out) calc(var(--w) * 70ms) both;
+    }
+
+    .ctas,
+    .lead,
+    .trust {
+      animation: rise-soft 0.9s var(--ease-out) 0.35s both;
+    }
+
+    .ctas {
+      animation-delay: 0.45s;
+    }
+
+    .trust {
+      animation-delay: 0.55s;
+    }
+
     .stage :global(.p-left),
     .stage :global(.p-right) {
       animation: fan-out 1.3s var(--ease-out) 0.2s both;
@@ -203,6 +230,84 @@ const trust = ['Free & open source', 'Works offline', 'No account', 'Your photos
 
     .callout {
       animation: pop 0.8s var(--ease-out) 0.9s both;
+    }
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(0.45em) rotate(2deg);
+    }
+  }
+
+  @keyframes rise-soft {
+    from {
+      opacity: 0;
+      transform: translateY(1rem);
+    }
+  }
+
+  /* While the hero scrolls away, the phones drift apart at different speeds. */
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .stage :global(.p-left),
+      .stage :global(.p-right),
+      .stage :global(.p-front),
+      .callout {
+        animation-name: fan-out, var(--drift);
+        animation-duration: 1.3s, auto;
+        animation-timing-function: var(--ease-out), linear;
+        animation-delay: 0.2s, 0s;
+        animation-fill-mode: both, both;
+        animation-timeline: auto, scroll(root block);
+        animation-range: normal, 0 100vh;
+      }
+
+      .stage :global(.p-left) {
+        --drift: drift-left;
+      }
+
+      .stage :global(.p-right) {
+        --drift: drift-right;
+      }
+
+      .stage :global(.p-front) {
+        --drift: drift-front;
+        animation-name: settle, var(--drift);
+        animation-duration: 1.1s, auto;
+        animation-delay: 0.1s, 0s;
+      }
+
+      .callout {
+        --drift: drift-callout;
+        animation-name: pop, var(--drift);
+        animation-duration: 0.8s, auto;
+        animation-delay: 0.9s, 0s;
+      }
+    }
+  }
+
+  @keyframes drift-left {
+    to {
+      transform: translate(-6%, -10%) rotate(-3deg);
+    }
+  }
+
+  @keyframes drift-right {
+    to {
+      transform: translate(6%, -16%) rotate(3deg);
+    }
+  }
+
+  @keyframes drift-front {
+    to {
+      transform: translateY(-5%);
+    }
+  }
+
+  @keyframes drift-callout {
+    to {
+      transform: translateY(-120%);
     }
   }
 
