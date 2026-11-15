@@ -27,6 +27,7 @@ import {
   SunMedium,
   SwatchBook,
   Trash2,
+  UserRound,
   X,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -520,6 +521,18 @@ export default function LayersPanel({ ctx }: { ctx: BatchContext }) {
                 add(layer)
                 editor.set({ maskLayerId: layer.id })
               },
+            },
+            {
+              label: 'Subject adjust (finds the subject)',
+              icon: UserRound,
+              onSelect: () =>
+                add(
+                  createLayer('basic', {
+                    name: 'Subject adjust',
+                    params: { ...defaultBasic(), exposure: 0.3 },
+                    mask: defaultMask('subject', ctx),
+                  }),
+                ),
             },
             { label: 'Adjust', icon: SunMedium, onSelect: () => add(createLayer('basic')) },
             {
