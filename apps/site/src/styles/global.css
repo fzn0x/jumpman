@@ -452,3 +452,53 @@ kbd {
     transform: scaleX(1);
   }
 }
+
+/* The dial turns as its section scrolls past: ticks slide under a fixed red needle. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .ticks--scroll {
+      position: relative;
+      overflow: hidden;
+      background-image: none;
+    }
+
+    .ticks--scroll::before,
+    .ticks--scroll::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+    }
+
+    .ticks--scroll::before {
+      right: -6.25rem;
+      background-image:
+        repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 3.125rem),
+        repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 0.625rem);
+      background-size:
+        100% 100%,
+        100% 50%;
+      background-position:
+        0 0,
+        0 100%;
+      background-repeat: no-repeat;
+      animation: dial-turn linear both;
+      animation-timeline: view();
+    }
+
+    .ticks--scroll::after {
+      left: calc(50% - 1px);
+      width: 2px;
+      background: var(--red);
+    }
+  }
+}
+
+@keyframes dial-turn {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-6.25rem);
+  }
+}
