@@ -326,6 +326,16 @@ void main() {
 }
 `
 
+/** Tints what a mask covers (painting feedback; no CPU counterpart). */
+export const OVERLAY = `${HEADER}${COMMON}
+uniform vec3 u_tint;
+uniform float u_tintAmount;
+void main() {
+  vec3 src = readSrc();
+  outColor = vec4(mix(src, u_tint, clamp(maskValue(src), 0.0, 1.0) * u_tintAmount), 1.0);
+}
+`
+
 /** Draws the final frame to the canvas, optionally split with the original. */
 export const DISPLAY = `${HEADER}
 uniform sampler2D u_edited;

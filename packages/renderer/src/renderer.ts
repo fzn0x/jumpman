@@ -16,7 +16,7 @@ import {
   type SourceSize,
   wbGains,
 } from '@jumpman/core'
-import { BASIC, CURVES, DISPLAY, GEOMETRY, HSL, LUT, SPLIT, VERTEX } from './shaders.ts'
+import { BASIC, CURVES, DISPLAY, GEOMETRY, HSL, LUT, OVERLAY, SPLIT, VERTEX } from './shaders.ts'
 
 export type { FrameGeometry }
 
@@ -47,6 +47,10 @@ export interface RenderOptions extends FrameGeometry {
    * this returns nothing.
    */
   maskRaster?: MaskRasterResolver
+  /** Tints the area this mask covers on top of the result (painting feedback). */
+  maskOverlay?: Mask
+  /** Overlay tint as display RGB, 0..1. */
+  overlayColor?: [number, number, number]
 }
 
 export interface Histogram {
@@ -498,12 +502,25 @@ export class GLRenderer {
     }
     this.lastOutput = current
 
+    // Painting feedback goes into the free ping-pong target, so readPixels and
+    // the histogram keep seeing the clean result.
+    let shown = current
+    if (opts.maskOverlay && !opts.showOriginal) {
+      const out = this.target(ping, w, h)
+      const p = this.program('overlay', OVERLAY)
+      this.setCommon(p, opts.maskOverlay, 1, ctx)
+      p.v3('u_tint', opts.overlayColor ?? [1, 0.18, 0.28]).f('u_tintAmount', 0.55)
+      this.bindTexture(0, current.tex)
+      this.draw(out, w, h)
+      shown = out
+    }
+
     this.program('display', DISPLAY)
       .i('u_edited', 0)
       .i('u_original', 1)
       .f('u_split', opts.split ?? 0)
       .i('u_showOriginal', opts.showOriginal ? 1 : 0)
-    this.bindTexture(0, current.tex)
+    this.bindTexture(0, shown.tex)
     this.bindTexture(1, original.tex)
     this.draw(null, w, h)
     return true
