@@ -52,13 +52,15 @@ export const photoKeys = {
   source: (id: string) => `src:${id}`,
   preview: (id: string) => `preview:${id}`,
   thumb: (id: string) => `thumb:${id}`,
-  /** Cached subject mask; the model name invalidates masks from older models. */
+  /** Cached segmentation masks; the model name invalidates masks from older models. */
   subjectMask: (id: string) => `seg:subject:magictouch1:${id}`,
+  skyMask: (id: string) => `seg:sky:effvitb1:${id}`,
   all: (id: string) => [
     `src:${id}`,
     `preview:${id}`,
     `thumb:${id}`,
     `seg:subject:magictouch1:${id}`,
+    `seg:sky:effvitb1:${id}`,
   ],
 }
 
