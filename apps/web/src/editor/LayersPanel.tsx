@@ -27,10 +27,13 @@ import {
   SunMedium,
   SwatchBook,
   Trash2,
+  UserRound,
   X,
 } from 'lucide-react'
 import { useState } from 'react'
+import { aiMasksEnabled, useSegments } from '../lib/segment.ts'
 import { editor, useEditor } from '../state/editor.ts'
+import { useLibrary } from '../state/library.ts'
 import { Menu } from '../ui/Menu.tsx'
 import { Button, Chip, cx, Slider, Switch } from '../ui/primitives.tsx'
 import { BrushToolbar } from './Brush.tsx'
@@ -107,6 +110,27 @@ function describe(layer: Layer): string {
   if (layer.opacity < 1) parts.push(`${Math.round(layer.opacity * 100)}%`)
   if (layer.mask) parts.push(`${MASK_LABELS[layer.mask.type]} mask`)
   return parts.join(' · ') || 'Whole photo'
+}
+
+/** Where a subject mask comes from on the current photo, and the quick estimate's size. */
+function SubjectSource({ ctx, size }: { ctx: BatchContext; size: React.ReactNode }) {
+  const photoId = ctx.current?.id
+  const status = useSegments((s) => (photoId ? s.status[photoId] : undefined))
+  // Re-read when the setting changes.
+  useLibrary((s) => s.settings.aiMasks)
+  const ai = aiMasksEnabled() && status !== 'failed'
+  return (
+    <div data-subject-mask={ai ? (status ?? 'pending') : 'quick'}>
+      <p className="py-1 text-xs leading-relaxed text-mute">
+        {!ai
+          ? 'Quick estimate: a soft area around each photo’s focal point.'
+          : status === 'ready'
+            ? 'Subject found on this device, shaped to each photo.'
+            : 'Finding the subject on this device…'}
+      </p>
+      {!ai && size}
+    </div>
+  )
 }
 
 function MaskEditor({ ctx, layer, own }: { ctx: BatchContext; layer: Layer; own: boolean }) {
@@ -187,7 +211,7 @@ function MaskEditor({ ctx, layer, own }: { ctx: BatchContext; layer: Layer; own:
           {num('Feather', 'feather', 0, 1)}
         </>
       )}
-      {m?.type === 'subject' && num('Size', 'size', 0.1, 1.2)}
+      {m?.type === 'subject' && <SubjectSource ctx={ctx} size={num('Size', 'size', 0.1, 1.2)} />}
       {m?.type === 'brush' && (
         <p className="py-1 text-xs leading-relaxed text-mute">
           {m.strokes.length
@@ -497,6 +521,18 @@ export default function LayersPanel({ ctx }: { ctx: BatchContext }) {
                 add(layer)
                 editor.set({ maskLayerId: layer.id })
               },
+            },
+            {
+              label: 'Subject adjust (finds the subject)',
+              icon: UserRound,
+              onSelect: () =>
+                add(
+                  createLayer('basic', {
+                    name: 'Subject adjust',
+                    params: { ...defaultBasic(), exposure: 0.3 },
+                    mask: defaultMask('subject', ctx),
+                  }),
+                ),
             },
             { label: 'Adjust', icon: SunMedium, onSelect: () => add(createLayer('basic')) },
             {

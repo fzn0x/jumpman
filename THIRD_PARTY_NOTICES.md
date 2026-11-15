@@ -90,3 +90,24 @@ Copyright (C) 2024, Thomas G. Lane, Guido Vollbeding
 
 libjpeg is free software under the IJG license, published with its source at
 <https://www.ijg.org>.
+
+## MediaPipe Tasks Vision
+
+Subject masks run on the device with [MediaPipe](https://ai.google.dev/edge/mediapipe) Tasks Vision
+1.2.2 (`@mediapipe/tasks-vision`), by Google LLC, licensed under the
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). Its WebAssembly runtime is the file
+`assets/vision_wasm_module_internal-*.wasm` in the app build, with the loader
+`assets/vision_wasm_module_internal-*.js`. Both load only when a subject mask is first used. The
+package ships no separate license file; the license is declared in its `package.json`. Source code:
+<https://github.com/google-ai-edge/mediapipe>.
+
+## MagicTouch segmentation model
+
+The subject mask model is MagicTouch v1 (`magic_touch.tflite`, float32), the interactive segmentation
+model published by Google for MediaPipe at
+<https://storage.googleapis.com/mediapipe-models/interactive_segmenter/magic_touch/float32/1/magic_touch.tflite>.
+Its [model card](https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MagicTouch.pdf) lists
+photo editing among its intended uses and licenses the model under the
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). Jumpman ships it unmodified as
+`assets/magic_touch-*.tflite` (SHA-256
+`e24338a717c1b7ad8d159666677ef400babb7f33b8ad60c4d96db4ecf694cd25`).

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Mask } from '../model/layers.ts'
 import {
+  confidenceToCoverage,
   EMPTY_MASK_RASTER,
   type MaskRaster,
   maskRasterSize,
@@ -39,5 +40,12 @@ describe('raster masks', () => {
     expect(resolveMaskRaster({ type: 'sky' }, source, custom)).toBe(seg)
     expect(resolveMaskRaster(brush, source, custom)?.key).toBe(b?.key)
     expect(resolveMaskRaster(brush, source, () => EMPTY_MASK_RASTER)).toBe(EMPTY_MASK_RASTER)
+  })
+
+  it('quantizes model confidences to coverage', () => {
+    expect([...confidenceToCoverage([0, 0.5, 1, -0.2, 1.7, Number.NaN, 0.002])]).toEqual([
+      0, 128, 255, 0, 255, 0, 1,
+    ])
+    expect(confidenceToCoverage(new Float32Array(0))).toHaveLength(0)
   })
 })

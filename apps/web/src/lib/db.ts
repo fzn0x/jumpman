@@ -52,7 +52,14 @@ export const photoKeys = {
   source: (id: string) => `src:${id}`,
   preview: (id: string) => `preview:${id}`,
   thumb: (id: string) => `thumb:${id}`,
-  all: (id: string) => [`src:${id}`, `preview:${id}`, `thumb:${id}`],
+  /** Cached subject mask; the model name invalidates masks from older models. */
+  subjectMask: (id: string) => `seg:subject:magictouch1:${id}`,
+  all: (id: string) => [
+    `src:${id}`,
+    `preview:${id}`,
+    `thumb:${id}`,
+    `seg:subject:magictouch1:${id}`,
+  ],
 }
 
 /** Asks the browser not to evict our data under storage pressure. */

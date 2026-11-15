@@ -105,3 +105,16 @@ export function sampleMaskRaster(r: MaskRaster, x: number, y: number): number {
   const bottom = c + (d - c) * tx
   return (top + (bottom - top) * ty) / 255
 }
+
+/**
+ * Quantizes per-pixel confidences (0..1, e.g. a segmentation model's soft
+ * mask) to raster coverage. Out-of-range and NaN values are clamped.
+ */
+export function confidenceToCoverage(values: ArrayLike<number>): Uint8Array {
+  const out = new Uint8Array(values.length)
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i] as number
+    out[i] = v > 0 ? (v < 1 ? Math.round(v * 255) : 255) : 0
+  }
+  return out
+}
