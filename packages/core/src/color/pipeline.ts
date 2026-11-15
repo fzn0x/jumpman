@@ -4,7 +4,15 @@
  *
  * Layers operate on display-referred sRGB values in 0..1.
  */
+import {
+  type MaskRaster,
+  type MaskRasterResolver,
+  resolveMaskRaster,
+  type SourceSize,
+  sampleMaskRaster,
+} from '../mask/raster.ts'
 import type { Basic } from '../model/basic.ts'
+import { type FrameGeometry, frameToImage, frameToSource, rotatedSize } from '../model/crop.ts'
 import {
   type HslParams,
   HUE_BAND_CENTERS,
@@ -37,6 +45,16 @@ export interface PixelContext {
   /** Salient center used by subject masks (normalized). */
   subject?: { x: number; y: number }
   seed?: number
+  /**
+   * Position in the rotated, uncropped photo where linear, radial, sky and
+   * subject masks live, and that photo's aspect. Default to u, v and aspect.
+   */
+  mx?: number
+  my?: number
+  maskAspect?: number
+  /** Position in the source photo (before crop, rotation and flip) for raster masks. */
+  sx?: number
+  sy?: number
 }
 
 export const CONTRAST_PIVOT = 0.46
@@ -230,21 +248,40 @@ function hueDistance(a: number, b: number): number {
   return d > 180 ? 360 - d : d
 }
 
-/** Mask coverage (0..1) of a pixel. */
-export function maskValue(mask: Mask, rgb: RGB, ctx: PixelContext): number {
+/**
+ * Mask coverage (0..1) of a pixel. A raster, when given, replaces the
+ * analytic formula and is sampled at the pixel's source position.
+ */
+export function maskValue(
+  mask: Mask,
+  rgb: RGB,
+  ctx: PixelContext,
+  raster?: MaskRaster | null,
+): number {
+  const u = ctx.mx ?? ctx.u
+  const v = ctx.my ?? ctx.v
+  const aspect = ctx.maskAspect ?? ctx.aspect
   let m: number
+  if (raster) {
+    m = sampleMaskRaster(raster, ctx.sx ?? ctx.u, ctx.sy ?? ctx.v)
+    return mask.invert ? 1 - m : m
+  }
   switch (mask.type) {
+    case 'brush':
+      // Painted masks only exist as rasters; without one nothing is covered.
+      m = 0
+      break
     case 'linear': {
-      const dx = (mask.x1 - mask.x0) * ctx.aspect
+      const dx = (mask.x1 - mask.x0) * aspect
       const dy = mask.y1 - mask.y0
       const len2 = dx * dx + dy * dy || 1e-6
-      const t = ((ctx.u - mask.x0) * ctx.aspect * dx + (ctx.v - mask.y0) * dy) / len2
+      const t = ((u - mask.x0) * aspect * dx + (v - mask.y0) * dy) / len2
       m = 1 - smoothstep(0, 1, t)
       break
     }
     case 'radial': {
-      const qx = (ctx.u - mask.cx) / Math.max(mask.rx, 1e-4)
-      const qy = (ctx.v - mask.cy) / Math.max(mask.ry, 1e-4)
+      const qx = (u - mask.cx) / Math.max(mask.rx, 1e-4)
+      const qy = (v - mask.cy) / Math.max(mask.ry, 1e-4)
       const d = Math.sqrt(qx * qx + qy * qy)
       m = 1 - smoothstep(1 - Math.max(mask.feather, 0.001), 1, d)
       break
@@ -265,7 +302,7 @@ export function maskValue(mask: Mask, rgb: RGB, ctx: PixelContext): number {
     }
     case 'sky': {
       const [h, s, l] = rgbToHsl(rgb)
-      const vertical = 1 - smoothstep(0.3, 0.7, ctx.v)
+      const vertical = 1 - smoothstep(0.3, 0.7, v)
       const blue = (1 - smoothstep(30, 60, hueDistance(h, 215))) * smoothstep(0.1, 0.25, s)
       const overcast = smoothstep(0.65, 0.85, l) * (1 - smoothstep(0.15, 0.35, s))
       m = vertical * Math.max(blue, overcast)
@@ -274,8 +311,8 @@ export function maskValue(mask: Mask, rgb: RGB, ctx: PixelContext): number {
     case 'subject': {
       const c = ctx.subject ?? { x: 0.5, y: 0.5 }
       const r = Math.max(mask.size, 0.05) * 0.5
-      const qx = ((ctx.u - c.x) * ctx.aspect) / r
-      const qy = (ctx.v - c.y) / r
+      const qx = ((u - c.x) * aspect) / r
+      const qy = (v - c.y) / r
       m = 1 - smoothstep(0.5, 1, Math.sqrt(qx * qx + qy * qy))
       break
     }
@@ -289,7 +326,12 @@ export type LutResolver = (id: string) => Lut3D | undefined
 export interface CompiledLayer {
   layer: Layer
   apply: (rgb: RGB, ctx: PixelContext) => RGB
+  /** Raster that replaces the analytic mask, if any. */
+  raster?: MaskRaster | null
 }
+
+/** Supplies the raster for a layer's mask, already bound to one photo. */
+export type LayerMaskRasters = (mask: Mask) => MaskRaster | null
 
 export function compileLayer(layer: Layer, luts: LutResolver): CompiledLayer | null {
   switch (layer.kind) {
@@ -318,18 +360,26 @@ export function compileLayer(layer: Layer, luts: LutResolver): CompiledLayer | n
   }
 }
 
-export function compileLayers(layers: Layer[], luts: LutResolver): CompiledLayer[] {
+export function compileLayers(
+  layers: Layer[],
+  luts: LutResolver,
+  masks?: LayerMaskRasters,
+): CompiledLayer[] {
   return layers
     .filter((l) => l.enabled && l.opacity > 0)
-    .map((l) => compileLayer(l, luts))
+    .map((l) => {
+      const compiled = compileLayer(l, luts)
+      if (compiled && l.mask && masks) compiled.raster = masks(l.mask)
+      return compiled
+    })
     .filter((l): l is CompiledLayer => l !== null)
 }
 
 export function applyCompiled(input: RGB, compiled: CompiledLayer[], ctx: PixelContext): RGB {
   let c = input
-  for (const { layer, apply } of compiled) {
+  for (const { layer, apply, raster } of compiled) {
     const out = apply(c, ctx)
-    const k = layer.opacity * (layer.mask ? maskValue(layer.mask, c, ctx) : 1)
+    const k = layer.opacity * (layer.mask ? maskValue(layer.mask, c, ctx, raster) : 1)
     if (k >= 1) c = out
     else if (k > 0)
       c = [c[0] + (out[0] - c[0]) * k, c[1] + (out[1] - c[1]) * k, c[2] + (out[2] - c[2]) * k]
@@ -343,21 +393,59 @@ export interface ImageDataLike {
   data: Uint8ClampedArray | Uint8Array
 }
 
-/** Renders layers onto an RGBA image on the CPU. */
+export interface RenderImageOptions {
+  subject?: { x: number; y: number }
+  seed?: number
+  /**
+   * How `src` was cut from the photo. Masks are evaluated in the photo's own
+   * coordinates through it, as the WebGL renderer does. Defaults to the full,
+   * unrotated photo.
+   */
+  geometry?: FrameGeometry
+  /** Source photo size, which sets the raster mask resolution. Derived from `src` by default. */
+  sourceSize?: SourceSize
+  /** Rasters for masks; brush masks are rasterized by default. */
+  maskRaster?: MaskRasterResolver
+}
+
+/** The photo size a frame of `width` x `height` came from, given its geometry. */
+function sourceSizeOf(width: number, height: number, g: FrameGeometry): SourceSize {
+  const r = g.rect ?? { w: 1, h: 1 }
+  const s = rotatedSize(Math.round(width / r.w), Math.round(height / r.h), g.rotate ?? 0)
+  return { width: s.w, height: s.h }
+}
+
+/** Renders layers onto an RGBA image (a frame of the photo) on the CPU. */
 export function renderImage(
   src: ImageDataLike,
   layers: Layer[],
   luts: LutResolver,
-  opts: { subject?: { x: number; y: number }; seed?: number } = {},
+  opts: RenderImageOptions = {},
 ): ImageDataLike {
   const { width, height } = src
   const out = new Uint8ClampedArray(width * height * 4)
-  const compiled = compileLayers(layers, luts)
-  const ctx: PixelContext = { u: 0, v: 0, aspect: width / height, ...opts }
+  const geometry = opts.geometry ?? {}
+  const source = opts.sourceSize ?? sourceSizeOf(width, height, geometry)
+  const compiled = compileLayers(layers, luts, (m) => resolveMaskRaster(m, source, opts.maskRaster))
+  const rotated = rotatedSize(source.width, source.height, geometry.rotate ?? 0)
+  const ctx: PixelContext = {
+    u: 0,
+    v: 0,
+    aspect: width / height,
+    maskAspect: rotated.w / Math.max(1, rotated.h),
+    ...(opts.subject ? { subject: opts.subject } : {}),
+    ...(opts.seed !== undefined ? { seed: opts.seed } : {}),
+  }
   for (let y = 0; y < height; y++) {
     ctx.v = (y + 0.5) / height
     for (let x = 0; x < width; x++) {
       ctx.u = (x + 0.5) / width
+      const m = frameToImage(ctx.u, ctx.v, geometry)
+      const s = frameToSource(ctx.u, ctx.v, geometry)
+      ctx.mx = m.x
+      ctx.my = m.y
+      ctx.sx = s.x
+      ctx.sy = s.y
       const i = (y * width + x) * 4
       const c = applyCompiled(
         [
@@ -377,7 +465,14 @@ export function renderImage(
   return { width, height, data: out }
 }
 
-const SPATIAL_MASKS = new Set<Mask['type']>(['linear', 'radial', 'sky', 'subject'])
+/** Masks that depend on where a pixel is, not only on its color. */
+export const SPATIAL_MASKS: ReadonlySet<Mask['type']> = new Set<Mask['type']>([
+  'linear',
+  'radial',
+  'brush',
+  'sky',
+  'subject',
+])
 
 /**
  * Bakes the color-only part of a layer stack into a 3D LUT (for .cube export

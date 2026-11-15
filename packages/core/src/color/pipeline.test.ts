@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { defaultBasic } from '../model/basic.ts'
-import { createLayer, defaultHsl, defaultSplit } from '../model/layers.ts'
+import { sourceToFrame } from '../model/crop.ts'
+import { createLayer, defaultHsl, defaultSplit, type Mask } from '../model/layers.ts'
 import { luma } from './color.ts'
 import type { RGB } from './lut.ts'
 import { sampleLut } from './lut.ts'
@@ -12,6 +13,7 @@ import {
   hueBandWeights,
   maskValue,
   renderImage,
+  SPATIAL_MASKS,
   toneCurve,
 } from './pipeline.ts'
 
@@ -134,5 +136,80 @@ describe('render and bake', () => {
     expect(out[0]).toBeCloseTo(out[1], 2)
     const id = bakeLut([], noLuts, 9)
     expect(sampleLut(id, [0.3, 0.6, 0.9])[2]).toBeCloseTo(0.9, 4)
+  })
+})
+
+describe('brush and raster masks', () => {
+  const grayImage = (w: number, h: number) => ({
+    width: w,
+    height: h,
+    data: new Uint8ClampedArray(w * h * 4).fill(128),
+  })
+  const brighten = (mask: Mask) => createLayer('basic', { params: basic({ exposure: 1 }), mask })
+  const dot = (x: number, y: number): Mask => ({
+    type: 'brush',
+    strokes: [{ mode: 'paint', size: 0.15, feather: 0, flow: 1, points: [x, y] }],
+  })
+  const px = (img: { width: number; data: Uint8ClampedArray | Uint8Array }, x: number, y: number) =>
+    img.data[(y * img.width + x) * 4] as number
+
+  it('samples rasters and inverts them', () => {
+    const raster = { width: 1, height: 1, data: new Uint8Array([255]), key: 'one' }
+    const brush: Mask = { type: 'brush', strokes: [] }
+    expect(maskValue(brush, gray, ctx)).toBe(0)
+    expect(maskValue(brush, gray, ctx, raster)).toBe(1)
+    expect(maskValue({ ...brush, invert: true }, gray, ctx, raster)).toBe(0)
+    // A raster replaces any analytic mask (e.g. a segmented sky).
+    expect(maskValue({ type: 'sky' }, [0.3, 0.5, 0.2], { ...ctx, v: 0.9 }, raster)).toBe(1)
+  })
+
+  it('applies a layer only where it was painted', () => {
+    const out = renderImage(grayImage(40, 20), [brighten(dot(0.25, 0.5))], noLuts)
+    expect(px(out, 10, 10)).toBeGreaterThan(160)
+    expect(px(out, 30, 10)).toBe(128)
+    const inverted = renderImage(
+      grayImage(40, 20),
+      [brighten({ ...dot(0.25, 0.5), invert: true } as Mask)],
+      noLuts,
+    )
+    expect(px(inverted, 10, 10)).toBe(128)
+    expect(px(inverted, 30, 10)).toBeGreaterThan(160)
+  })
+
+  it('keeps painted content in place under rotation, flip and crop', () => {
+    // A 40 x 20 photo painted at source (0.25, 0.5), rendered as a rotated frame.
+    for (const geometry of [
+      { rotate: 1 },
+      { rotate: 2, flipH: true },
+      { rotate: 3, rect: { x: 0.25, y: 0, w: 0.5, h: 1 } },
+    ]) {
+      const fw = Math.round((geometry.rotate % 2 ? 20 : 40) * (geometry.rect?.w ?? 1))
+      const fh = Math.round((geometry.rotate % 2 ? 40 : 20) * (geometry.rect?.h ?? 1))
+      const out = renderImage(grayImage(fw, fh), [brighten(dot(0.25, 0.5))], noLuts, {
+        geometry,
+        sourceSize: { width: 40, height: 20 },
+      })
+      const hit = sourceToFrame(0.25, 0.5, geometry)
+      const miss = sourceToFrame(0.75, 0.5, geometry)
+      const at = (p: { x: number; y: number }) =>
+        px(out, Math.floor(p.x * fw), Math.floor(p.y * fh))
+      expect(at(hit), JSON.stringify(geometry)).toBeGreaterThan(160)
+      expect(at(miss), JSON.stringify(geometry)).toBe(128)
+    }
+  })
+
+  it('takes rasters from a custom resolver', () => {
+    const top = { width: 1, height: 2, data: new Uint8Array([255, 0]), key: 'seg' }
+    const out = renderImage(grayImage(4, 40), [brighten({ type: 'subject', size: 0.5 })], noLuts, {
+      maskRaster: () => top,
+    })
+    expect(px(out, 2, 2)).toBeGreaterThan(160)
+    expect(px(out, 2, 37)).toBe(128)
+  })
+
+  it('leaves brush-masked layers out of baked LUTs', () => {
+    const lut = bakeLut([brighten(dot(0.5, 0.5))], noLuts, 9)
+    expect(sampleLut(lut, [0.5, 0.5, 0.5])[0]).toBeCloseTo(0.5, 4)
+    expect(SPATIAL_MASKS.has('brush')).toBe(true)
   })
 })
