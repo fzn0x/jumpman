@@ -87,3 +87,70 @@ export function fitSize(w: number, h: number, maxEdge?: number): { w: number; h:
   const s = maxEdge / Math.max(w, h)
   return { w: Math.max(1, Math.round(w * s)), h: Math.max(1, Math.round(h * s)) }
 }
+
+/** How a rendered frame is cut from the source photo. */
+export interface FrameGeometry {
+  /** Crop window, normalized to the rotated image (0..1). Defaults to the full image. */
+  rect?: Rect
+  /** Quarter turns clockwise. */
+  rotate?: number
+  flipH?: boolean
+}
+
+export interface Point {
+  x: number
+  y: number
+}
+
+const FULL: Rect = { x: 0, y: 0, w: 1, h: 1 }
+const turns = (rotate = 0) => ((Math.round(rotate) % 4) + 4) % 4
+
+/**
+ * Maps a frame position (0..1, y down) to the rotated, flipped and uncropped
+ * photo, where linear and radial masks live.
+ */
+export function frameToImage(u: number, v: number, g: FrameGeometry = {}): Point {
+  const r = g.rect ?? FULL
+  return { x: r.x + u * r.w, y: r.y + v * r.h }
+}
+
+/**
+ * Maps a frame position (0..1, y down) to the source photo before crop,
+ * rotation and flip. Mirrors the renderer's geometry pass.
+ */
+export function frameToSource(u: number, v: number, g: FrameGeometry = {}): Point {
+  const p = frameToImage(u, v, g)
+  const x = g.flipH ? 1 - p.x : p.x
+  const y = p.y
+  switch (turns(g.rotate)) {
+    case 1:
+      return { x: y, y: 1 - x }
+    case 2:
+      return { x: 1 - x, y: 1 - y }
+    case 3:
+      return { x: 1 - y, y: x }
+    default:
+      return { x, y }
+  }
+}
+
+/** Inverse of `frameToSource`: a source-photo position in frame coordinates. */
+export function sourceToFrame(x: number, y: number, g: FrameGeometry = {}): Point {
+  let p: Point
+  switch (turns(g.rotate)) {
+    case 1:
+      p = { x: 1 - y, y: x }
+      break
+    case 2:
+      p = { x: 1 - x, y: 1 - y }
+      break
+    case 3:
+      p = { x: y, y: 1 - x }
+      break
+    default:
+      p = { x, y }
+  }
+  if (g.flipH) p.x = 1 - p.x
+  const r = g.rect ?? FULL
+  return { x: (p.x - r.x) / r.w, y: (p.y - r.y) / r.h }
+}
