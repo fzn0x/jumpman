@@ -7,3 +7,4 @@
 *.jar binary
 gradlew.bat text eol=crlf
 *.tflite binary
+*.onnx binary
