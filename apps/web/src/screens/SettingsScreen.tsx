@@ -35,18 +35,18 @@ const RAW_DECODERS: { value: RawDecoder; label: string; description: string }[] 
   },
 ]
 
-const SUBJECT_MASKS = [
+const SMART_MASKS = [
   {
     ai: true,
     label: 'On-device AI',
     description:
-      'Finds the main subject of each photo with a segmentation model that runs on your device, so nothing is uploaded. In the web app the model (about 10 MB) downloads once, the first time you use a subject mask.',
+      'Finds the sky and the main subject of each photo with segmentation models that run on your device, so nothing is uploaded. In the web app each model downloads once (about 10 to 13 MB), the first time you use that mask.',
   },
   {
     ai: false,
     label: 'Quick estimate',
     description:
-      'Uses a soft area around each photo’s focal point. Instant, but it only roughly follows the subject’s shape.',
+      'Uses sky-like colors toward the top of each photo and a soft area around its focal point. Instant, but it only roughly follows the real shapes.',
   },
 ]
 
@@ -104,6 +104,25 @@ export function SettingsScreen() {
           files you import from now on.
         </p>
 
+        <SectionTitle>Smart masks</SectionTitle>
+        <fieldset>
+          <legend className="sr-only">Smart masks</legend>
+          <div className="flex flex-wrap gap-2">
+            {SMART_MASKS.map((o) => (
+              <Chip
+                key={o.label}
+                active={settings.aiMasks === o.ai}
+                onClick={() => updateSettings({ aiMasks: o.ai })}
+              >
+                {o.label}
+              </Chip>
+            ))}
+          </div>
+        </fieldset>
+        <p className="mt-2 text-xs leading-relaxed text-mute">
+          {SMART_MASKS.find((o) => o.ai === settings.aiMasks)?.description}
+        </p>
+
         <SectionTitle>Storage</SectionTitle>
         <div className="space-y-3 rounded-3xl bg-ink-2 p-4 text-sm">
           <p className="flex items-center gap-3">
@@ -128,25 +147,6 @@ export function SettingsScreen() {
             sync is on the roadmap.
           </p>
         </div>
-
-        <SectionTitle>Subject masks</SectionTitle>
-        <fieldset>
-          <legend className="sr-only">Subject masks</legend>
-          <div className="flex flex-wrap gap-2">
-            {SUBJECT_MASKS.map((o) => (
-              <Chip
-                key={o.label}
-                active={settings.aiMasks === o.ai}
-                onClick={() => updateSettings({ aiMasks: o.ai })}
-              >
-                {o.label}
-              </Chip>
-            ))}
-          </div>
-        </fieldset>
-        <p className="mt-2 text-xs leading-relaxed text-mute">
-          {SUBJECT_MASKS.find((o) => o.ai === settings.aiMasks)?.description}
-        </p>
 
         <SectionTitle>Get started</SectionTitle>
         <div className="grid gap-2">
