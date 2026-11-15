@@ -6,3 +6,4 @@
 *.ico binary
 *.jar binary
 gradlew.bat text eol=crlf
+*.tflite binary
