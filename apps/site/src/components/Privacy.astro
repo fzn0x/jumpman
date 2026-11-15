@@ -25,7 +25,7 @@ const points: { icon: IconName; title: string; text: string }[] = [
 <section class="privacy dark" id="privacy" aria-labelledby="privacy-title">
   <div class="container grid">
     <div class="statement">
-      <h2 id="privacy-title" class="display-l">
+      <h2 id="privacy-title" class="display-l" data-reveal>
         Your photos <span class="accent">never</span> leave your device.
       </h2>
       <a class="btn btn--ghost" href={links.repo} rel="noopener">
@@ -38,7 +38,7 @@ const points: { icon: IconName; title: string; text: string }[] = [
       <ul class="points" role="list">
         {
           points.map((p) => (
-            <li>
+            <li data-reveal>
               <span class="icon">
                 <Icon name={p.icon} />
               </span>
@@ -51,7 +51,7 @@ const points: { icon: IconName; title: string; text: string }[] = [
         }
       </ul>
 
-      <div class="built">
+      <div class="built" data-reveal>
         <h3 class="built-title">Built with</h3>
         <ul class="chips" role="list">
           {

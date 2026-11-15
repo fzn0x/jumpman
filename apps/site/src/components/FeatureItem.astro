@@ -11,7 +11,7 @@ interface Props {
 const { feature, size = 'md' } = Astro.props
 ---
 
-<li class:list={['feature', `feature--${size}`, `is-${feature.status}`]}>
+<li class:list={['feature', `feature--${size}`, `is-${feature.status}`]} data-reveal>
   <div class="top">
     <h3>{feature.title}</h3>
     <StatusBadge status={feature.status} />

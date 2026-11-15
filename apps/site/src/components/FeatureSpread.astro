@@ -19,9 +19,9 @@ const titleId = `${group.id}-title`
 <article class:list={['spread', { reverse }]} id={group.id} aria-labelledby={titleId}>
   <div class="aside">
     <div class="sticky">
-      <h2 id={titleId} class="display-l">{group.title}</h2>
-      <p class="lead">{group.intro}</p>
-      <figure class="shot">
+      <h2 id={titleId} class="display-l" data-reveal>{group.title}</h2>
+      <p class="lead" data-reveal>{group.intro}</p>
+      <figure class="shot" data-reveal="scale">
         <Phone screen={screen} class="shot-phone" />
         <figcaption>{screen.caption}</figcaption>
       </figure>

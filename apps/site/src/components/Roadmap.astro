@@ -10,8 +10,8 @@ const group = featureGroup('roadmap')
 <section class="roadmap section" id={group.id} aria-labelledby="roadmap-title">
   <div class="container">
     <div class="head">
-      <h2 id="roadmap-title" class="display-l">{group.title}.</h2>
-      <div class="intro">
+      <h2 id="roadmap-title" class="display-l" data-reveal>{group.title}.</h2>
+      <div class="intro" data-reveal>
         <p class="lead">{group.intro}</p>
         <a class="btn btn--ghost" href={links.issues} rel="noopener">
           Help build it
@@ -22,7 +22,7 @@ const group = featureGroup('roadmap')
     <ul class="items" role="list">
       {
         group.features.map((feature) => (
-          <li class="item">
+          <li class="item" data-reveal>
             <StatusBadge status={feature.status} />
             <h3>{feature.title}</h3>
             <p>{feature.description}</p>

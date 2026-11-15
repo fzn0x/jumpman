@@ -369,6 +369,37 @@ kbd {
   mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
 }
 
+/* Scroll reveals. The inline head script adds `.motion` only when JavaScript runs and the
+   visitor has no reduced-motion preference, so content is never hidden without it. */
+.motion [data-reveal] {
+  opacity: 0;
+  transform: translateY(var(--reveal-y, 1.75rem));
+  transition:
+    opacity 0.7s var(--ease-out),
+    transform 1s var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+
+.motion [data-reveal="fade"] {
+  --reveal-y: 0px;
+}
+
+.motion [data-reveal="scale"] {
+  transform: translateY(1.25rem) scale(0.94);
+}
+
+.motion [data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Lets a looping demo jump back to its start state without animating there. */
+.snap,
+.snap * {
+  /* biome-ignore lint/complexity/noImportantStyles: must beat every scoped component transition */
+  transition: none !important;
+}
+
 /* Section rhythm */
 
 .section {
@@ -387,5 +418,87 @@ kbd {
   .btn:hover,
   .btn:active {
     translate: none;
+  }
+}
+
+/* A thin red bar that tracks how far down the page you are. */
+.scroll-progress {
+  display: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .scroll-progress {
+      position: fixed;
+      inset: 0 0 auto;
+      z-index: 60;
+      display: block;
+      height: 3px;
+      background: var(--red);
+      transform-origin: 0 50%;
+      pointer-events: none;
+      animation: progress-grow linear both;
+      animation-timeline: scroll(root block);
+    }
+  }
+}
+
+@keyframes progress-grow {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* The dial turns as its section scrolls past: ticks slide under a fixed red needle. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .ticks--scroll {
+      position: relative;
+      overflow: hidden;
+      background-image: none;
+    }
+
+    .ticks--scroll::before,
+    .ticks--scroll::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+    }
+
+    .ticks--scroll::before {
+      right: -6.25rem;
+      background-image:
+        repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 3.125rem),
+        repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 0.625rem);
+      background-size:
+        100% 100%,
+        100% 50%;
+      background-position:
+        0 0,
+        0 100%;
+      background-repeat: no-repeat;
+      animation: dial-turn linear both;
+      animation-timeline: view();
+    }
+
+    .ticks--scroll::after {
+      left: calc(50% - 1px);
+      width: 2px;
+      background: var(--red);
+    }
+  }
+}
+
+@keyframes dial-turn {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-6.25rem);
   }
 }

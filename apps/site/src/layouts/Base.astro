@@ -42,6 +42,21 @@ const ogImage = new URL(withBase('og.png'), site).href
     <meta name="color-scheme" content="light" />
     <meta name="generator" content={Astro.generator} />
 
+    <!-- Opt in to scroll reveals before first paint. If the motion script never runs, undo it
+         so nothing stays hidden. -->
+    <script is:inline>
+      {
+        const d = document.documentElement
+        if (
+          'IntersectionObserver' in window &&
+          matchMedia('(prefers-reduced-motion: no-preference)').matches
+        ) {
+          d.classList.add('motion')
+          setTimeout(() => window.__jmMotion || d.classList.remove('motion'), 3000)
+        }
+      }
+    </script>
+
     <link rel="icon" href={withBase('favicon.svg')} type="image/svg+xml" />
     <link rel="mask-icon" href={withBase('favicon.svg')} color="#E00000" />
     <link rel="sitemap" href={withBase('sitemap-index.xml')} />
@@ -70,10 +85,14 @@ const ogImage = new URL(withBase('og.png'), site).href
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
+    <div class="scroll-progress" aria-hidden="true"></div>
     <Header />
     <main id="main">
       <slot />
     </main>
     <Footer />
+    <script>
+      import '../scripts/motion.ts'
+    </script>
   </body>
 </html>

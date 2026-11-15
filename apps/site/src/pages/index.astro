@@ -1,4 +1,5 @@
 ---
+import Bento from '../components/Bento.astro'
 import CtaBand from '../components/CtaBand.astro'
 import FeatureSpread from '../components/FeatureSpread.astro'
 import Hero from '../components/Hero.astro'
@@ -22,6 +23,7 @@ const jsonLd = softwareApplicationJsonLd(Astro.site ?? new URL('https://fzn0x.gi
 >
   <Hero />
   <HowItWorks />
+  <Bento />
   <section class="features" id="features" aria-label="Features">
     <div class="container stack">
       <FeatureSpread group={featureGroup('batch-editing')} screen={screen('editor')} />

@@ -1,0 +1,1076 @@
+---
+/**
+ * "Watch a batch move": a bento grid of feature cards, each with a small looping sketch of the
+ * real screen. The markup holds each sketch's finished state; scripts/motion.ts rewinds and
+ * plays it while the card is on screen.
+ */
+
+interface Scene {
+  a: string
+  b: string
+  c: string
+  sun: string
+}
+
+const scene = (a: string, b: string, c: string, sun: string): Scene => ({ a, b, c, sun })
+const vars = (s: Scene) => `--a:${s.a};--b:${s.b};--c:${s.c};--sun:${s.sun}`
+
+// Global edit: six photos with six different casts, and the same six after one shared edit.
+const before = [
+  scene('#A9C3CF', '#5E7C8A', '#34495E', '#E4EEF2'),
+  scene('#FFE6B8', '#F4A259', '#B86B3C', '#FFF6E0'),
+  scene('#6B5A70', '#2B2230', '#1A1420', '#9C8C8F'),
+  scene('#D6E29A', '#7BAE7F', '#3D5A3A', '#F2F5D8'),
+  scene('#DCD6D0', '#B5ADA6', '#7C736D', '#F4F1EE'),
+  scene('#BFE3E0', '#4F9C9A', '#24504F', '#EAF6F4'),
+]
+const after = [
+  scene('#FFC4AB', '#EE6880', '#A23A5A', '#FFE9C9'),
+  scene('#FFCDB0', '#F2707F', '#A83E5D', '#FFEBCB'),
+  scene('#FCC0A8', '#EA6479', '#9E3756', '#FFE6C6'),
+  scene('#FFC8AD', '#F06C80', '#A43B5B', '#FFE9C9'),
+  scene('#FFCBAF', '#F16E82', '#A73D5C', '#FFEACA'),
+  scene('#FFC6AC', '#EF6A7E', '#A13959', '#FFE8C8'),
+]
+
+// The summary bar under the dial: the rest of the shared edit.
+const summary = [
+  ['Brightness', '+12'],
+  ['Highlights', '−20'],
+  ['Shadows', '+15'],
+  ['Warmth', '+8'],
+]
+
+// Smart selection: which photos each mode picks (mode indexes in `in`).
+const modes = ['Similar', 'Moment', 'Scene', 'Color']
+const picks = [
+  { s: scene('#FFE3DE', '#FF9F9F', '#B8405E', '#FFF4F0'), in: '0 3' },
+  { s: scene('#FFC9AE', '#F06A80', '#A63B5C', '#FFE9C9'), in: '0 3' },
+  { s: scene('#CFE8F2', '#5BA3C2', '#1F4E66', '#F2FAFD'), in: '1' },
+  { s: scene('#BFDDEA', '#4B8FB0', '#23506A', '#EEF7FB'), in: '1' },
+  { s: scene('#FFE2B0', '#F2A65A', '#9C5A2E', '#FFF5DA'), in: '2 3' },
+  { s: scene('#F9D0DA', '#D9799A', '#7C3554', '#FFEFF3'), in: '0 3' },
+  { s: scene('#FFD9A0', '#E8904A', '#8A4B26', '#FFF1D0'), in: '2 3' },
+  { s: scene('#DCEBD2', '#7BAE7F', '#3D5A3A', '#F2F7EC'), in: '' },
+]
+const firstPicked = picks.filter((p) => p.in.split(' ').includes('0')).length
+
+// Consistency score: 30 segments, lit up to the score.
+const SEGMENTS = 30
+const scoreFrom = 54
+const scoreTo = 92
+const segment = (i: number) =>
+  i < Math.round((scoreFrom / 100) * SEGMENTS)
+    ? 'a'
+    : i < Math.round((scoreTo / 100) * SEGMENTS)
+      ? 'b'
+      : ''
+const metrics = [
+  { label: 'Exposure', from: 0.42, to: 0.94 },
+  { label: 'White balance', from: 0.3, to: 0.9 },
+  { label: 'Contrast', from: 0.62, to: 0.96 },
+]
+
+// Bulk crop: the frames each photo gets per ratio, nudged per photo.
+const ratios = ['4:5', '9:16', '16:9']
+const cropScenes = [
+  { s: scene('#FFD9D4', '#FF9A9A', '#B8405E', '#FFF4F0'), dx: '-7%', dy: '6%' },
+  { s: scene('#CFE8F2', '#5BA3C2', '#1F4E66', '#F2FAFD'), dx: '9%', dy: '-8%' },
+  { s: scene('#FFE2B0', '#F2A65A', '#9C5A2E', '#FFF5DA'), dx: '0%', dy: '10%' },
+  { s: scene('#DCEBD2', '#7BAE7F', '#3D5A3A', '#F2F7EC'), dx: '6%', dy: '-4%' },
+  { s: scene('#F9D0DA', '#D9799A', '#7C3554', '#FFEFF3'), dx: '-10%', dy: '0%' },
+  { s: scene('#DCD6D0', '#B5ADA6', '#7C736D', '#F4F1EE'), dx: '4%', dy: '8%' },
+]
+
+// Batch export: `{collection}-{n:3}` file names.
+const files = [2.4, 2.1, 2.7, 2.2, 2.6, 2.3].map((mb, i) => ({
+  name: `spring-pink-${String(i + 1).padStart(3, '0')}.jpg`,
+  mb,
+}))
+const totalMb = files.reduce((sum, f) => sum + f.mb, 0)
+const EXPORT_SEGMENTS = 24
+---
+
+<section class="bento-section section" id="in-motion" aria-labelledby="bento-title">
+  <div class="container">
+    <div class="head">
+      <h2 id="bento-title" class="display-l" data-reveal>
+        One move. <span class="red">Every</span> photo.
+      </h2>
+      <p class="lead" data-reveal>
+        Sketches of what happens in the editor when you work on a set instead of a single shot.
+      </p>
+    </div>
+
+    <ul class="bento" role="list">
+      <li class="card wide" data-reveal>
+        <div class="mock global" data-demo="global" aria-hidden="true">
+          <div class="row">
+            <span class="seg"><span class="on">Global</span><span>Individual</span></span>
+            <span class="pill">6 photos</span>
+          </div>
+          <div class="thumbs">
+            {
+              before.map((s, k) => (
+                <div class="scene" style={vars(s)}>
+                  <div class="scene look" style={`${vars(after[k] ?? s)};--k:${k}`} />
+                </div>
+              ))
+            }
+          </div>
+          <div class="dial">
+            <div class="dial-head">
+              <span>Exposure</span>
+              <span class="dial-val" data-val="0.6">+0.60</span>
+            </div>
+            <div class="dial-strip">
+              <div class="dial-ticks"></div>
+              <span class="needle"></span>
+            </div>
+          </div>
+          <div class="summary">
+            {summary.map(([name, value]) => (
+              <span>
+                {name} <b>{value}</b>
+              </span>
+            ))}
+          </div>
+        </div>
+        <div class="copy">
+          <h3>One slider, the whole set</h3>
+          <p>
+            Move Exposure once and all six photos follow. It works as a target, so dark and bright
+            shots land in the same place.
+          </p>
+        </div>
+      </li>
+
+      <li class="card wide" data-reveal>
+        <div
+          class="mock select"
+          data-demo="selection"
+          data-mode="0"
+          data-modes={modes.length}
+          data-offset="1300"
+          aria-hidden="true"
+        >
+          <div class="tabs" style={`--n:${modes.length}`}>
+            <span class="tab-ind"></span>
+            {modes.map((m) => <span class="tab" data-tab={m}>{m}</span>)}
+          </div>
+          <div class="picks">
+            {
+              picks.map((p) => (
+                <div class:list={['pick', ...p.in.split(' ').filter(Boolean).map((m) => `m${m}`)]} data-in={p.in}>
+                  <div class="scene" style={vars(p.s)} />
+                  <span class="ring" />
+                  <span class="check">
+                    <svg viewBox="0 0 16 16" width="16" height="16">
+                      <path d="m4 8.5 2.5 2.5L12 5.5" />
+                    </svg>
+                  </span>
+                </div>
+              ))
+            }
+          </div>
+          <p class="foot">
+            <b data-picked>{firstPicked}</b> selected by <span data-mode-label>{modes[0]}</span>
+          </p>
+        </div>
+        <div class="copy">
+          <h3>Smart selection</h3>
+          <p>
+            Pick photos by similarity, by the moment they were taken, by scene or by color, instead
+            of tapping through forty thumbnails.
+          </p>
+        </div>
+      </li>
+
+      <li class="card" data-reveal>
+        <div class="mock score" data-demo="score" data-offset="500" aria-hidden="true">
+          <div class="row">
+            <div class="score-title">
+              <span class="label">Consistency</span>
+              <span class="state">
+                <span class="st-from">Uneven</span>
+                <span class="st-to">Consistent</span>
+              </span>
+            </div>
+            <span class="harmonize">Harmonize</span>
+          </div>
+          <p class="score-num">
+            <span data-score={scoreTo} data-from={scoreFrom}>{scoreTo}</span><span class="of">/100</span>
+          </p>
+          <div class="segs">
+            {Array.from({ length: SEGMENTS }, (_, i) => <i class={segment(i)} style={`--k:${i}`} />)}
+          </div>
+          <dl class="metrics">
+            {
+              metrics.map((m) => (
+                <div>
+                  <dt>{m.label}</dt>
+                  <dd>
+                    <span class="bar" style={`--from:${m.from};--to:${m.to}`} />
+                  </dd>
+                </div>
+              ))
+            }
+          </dl>
+        </div>
+        <div class="copy">
+          <h3>Consistency score</h3>
+          <p>
+            See how evenly exposure, white balance and contrast sit across the set. Harmonize pulls the
+            outliers in.
+          </p>
+        </div>
+      </li>
+
+      <li class="card" data-reveal>
+        <div
+          class="mock crop"
+          data-demo="crop"
+          data-ratio="0"
+          data-final="0"
+          data-ratios={ratios.length}
+          data-offset="1900"
+          aria-hidden="true"
+        >
+          <div class="ratios" style={`--n:${ratios.length}`}>
+            <span class="ratio-ind"></span>
+            {ratios.map((r) => <span class="ratio">{r}</span>)}
+          </div>
+          <div class="crops">
+            {
+              cropScenes.map((c) => (
+                <div class="cropbox" style={`--dx:${c.dx};--dy:${c.dy}`}>
+                  <div class="scene" style={vars(c.s)} />
+                  {ratios.map((_, r) => (
+                    <span class={`frame f${r}`} />
+                  ))}
+                </div>
+              ))
+            }
+          </div>
+          <p class="foot">{cropScenes.length} photos, one ratio, framing set per photo</p>
+        </div>
+        <div class="copy">
+          <h3>Bulk crop</h3>
+          <p>Crop the set to 4:5, 9:16 or 16:9 in one go, then nudge the framing photo by photo.</p>
+        </div>
+      </li>
+
+      <li class="card" data-reveal>
+        <div class="mock export" data-demo="export" data-offset="1000" aria-hidden="true">
+          <div class="row">
+            <span class="ex-title">Export {files.length} photos</span>
+            <span class="ex-meta">JPEG · 2048 px</span>
+          </div>
+          <ol class="files">
+            {
+              files.map((f, k) => (
+                <li data-file style={`--k:${k}`}>
+                  <span class="fname">{f.name}</span>
+                  <span class="fsize">{f.mb.toFixed(1)} MB</span>
+                  <span class="ok">
+                    <svg viewBox="0 0 16 16" width="14" height="14">
+                      <path d="m4 8.5 2.5 2.5L12 5.5" />
+                    </svg>
+                  </span>
+                </li>
+              ))
+            }
+          </ol>
+          <div class="segs segs--thin">
+            {Array.from({ length: EXPORT_SEGMENTS }, (_, i) => <i class="b" style={`--k:${i}`} />)}
+          </div>
+          <div class="row ex-foot">
+            <span class="status">
+              <span class="st-from">Exporting...</span>
+              <span class="st-to">Saved spring-pink.zip</span>
+            </span>
+            <span class="total" data-total={totalMb.toFixed(1)}>{totalMb.toFixed(1)} MB</span>
+          </div>
+        </div>
+        <div class="copy">
+          <h3>Batch export</h3>
+          <p>
+            Resize, rename with patterns like <code>{'{collection}-{n:3}'}</code> and save the whole set
+            as one ZIP.
+          </p>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<style>
+  .bento-section {
+    --card: var(--ink);
+    --panel: var(--ink-raised);
+    --panel-2: #3a3a3c;
+    --line: rgb(255 255 255 / 0.06);
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    padding-top: 0;
+  }
+
+  .head {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 1.5rem 3rem;
+    margin-bottom: clamp(2.5rem, 1.5rem + 3vw, 4rem);
+  }
+
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: clamp(0.75rem, 0.5rem + 0.8vw, 1.25rem);
+  }
+
+  .card {
+    grid-column: span 2;
+    display: grid;
+    grid-template-rows: 1fr auto;
+    gap: 1.5rem;
+    padding: clamp(1rem, 0.75rem + 1vw, 1.75rem);
+    border: 1px solid var(--line);
+    border-radius: 1.75rem;
+    background: var(--card);
+    color: var(--white);
+    box-shadow: 0 30px 60px -36px rgb(70 0 10 / 0.55);
+  }
+
+  .wide {
+    grid-column: span 3;
+  }
+
+  .copy {
+    display: grid;
+    gap: 0.4rem;
+    padding-inline: 0.25rem;
+  }
+
+  h3 {
+    font-family: var(--font-body);
+    font-size: 1.2rem;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  .copy p {
+    color: var(--gray);
+    font-size: 0.975rem;
+    line-height: 1.5;
+  }
+
+  .copy code {
+    color: var(--mist);
+  }
+
+  /* Mock panels */
+
+  .mock {
+    container-type: inline-size;
+    display: grid;
+    align-content: start;
+    gap: 0.85rem;
+    min-height: 15.5rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: var(--panel);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .pill {
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: var(--card);
+    color: var(--mist);
+    font-weight: 600;
+  }
+
+  .foot {
+    color: var(--gray);
+  }
+
+  .foot b {
+    color: var(--white);
+  }
+
+  .scene {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    background: linear-gradient(var(--a), var(--b));
+  }
+
+  .scene::before {
+    content: '';
+    position: absolute;
+    top: 24%;
+    left: 56%;
+    width: 24%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--sun);
+  }
+
+  .scene::after {
+    content: '';
+    position: absolute;
+    inset: 48% 0 0;
+    background: var(--c);
+    clip-path: polygon(0 38%, 28% 6%, 52% 34%, 74% 12%, 100% 42%, 100% 100%, 0 100%);
+  }
+
+  .scene > .scene {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    border-radius: 0;
+  }
+
+  /* Global edit */
+
+  .seg {
+    display: inline-flex;
+    padding: 0.2rem;
+    border-radius: 999px;
+    background: var(--card);
+    color: var(--gray);
+    font-weight: 600;
+  }
+
+  .seg > span {
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+  }
+
+  .seg .on {
+    background: var(--red);
+    color: var(--white);
+  }
+
+  .thumbs {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .thumbs > .scene {
+    aspect-ratio: 4 / 5;
+  }
+
+  .look {
+    transition: opacity 0.9s var(--ease) calc(0.25s + var(--k) * 0.11s);
+  }
+
+  [data-step='0'] .look {
+    opacity: 0;
+    transition-delay: calc(var(--k) * 0.05s);
+  }
+
+  .dial {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.7rem 0.8rem 0.6rem;
+    border-radius: 0.75rem;
+    background: var(--card);
+  }
+
+  .dial-head {
+    display: flex;
+    justify-content: space-between;
+    color: var(--mist);
+    font-weight: 600;
+  }
+
+  .dial-val {
+    min-width: 3.5em;
+    color: var(--salmon);
+    text-align: right;
+  }
+
+  .dial-strip {
+    position: relative;
+    height: 1rem;
+    overflow: hidden;
+    color: #6e6e73;
+    mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  }
+
+  .dial-ticks {
+    width: 200%;
+    height: 100%;
+    background-image:
+      repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 2.5rem),
+      repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 0.5rem);
+    background-size:
+      100% 100%,
+      100% 50%;
+    background-position:
+      0 0,
+      0 100%;
+    background-repeat: no-repeat;
+    transform: translateX(-22%);
+    transition: transform 1.7s var(--ease);
+  }
+
+  [data-step='0'] .dial-ticks {
+    transform: translateX(0);
+    transition-duration: 0.7s;
+  }
+
+  .needle {
+    position: absolute;
+    inset: 0 auto 0 calc(50% - 1px);
+    width: 2px;
+    background: var(--red);
+  }
+
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    color: var(--gray);
+  }
+
+  .summary span {
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: var(--card);
+  }
+
+  .summary b {
+    color: var(--white);
+    font-weight: 600;
+  }
+
+  @container (max-width: 24rem) {
+    .thumbs {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .thumbs > .scene {
+      aspect-ratio: 5 / 4;
+    }
+  }
+
+  /* Smart selection */
+
+  .tabs {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    padding: 0.2rem;
+    border-radius: 999px;
+    background: var(--card);
+    color: var(--gray);
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .tab {
+    position: relative;
+    padding: 0.25rem 0.25rem;
+    transition: color 0.3s;
+  }
+
+  .tab-ind {
+    position: absolute;
+    inset: 0.2rem auto 0.2rem 0.2rem;
+    width: calc((100% - 0.4rem) / var(--n));
+    border-radius: 999px;
+    background: var(--white);
+    transition: transform 0.55s var(--ease);
+  }
+
+  [data-mode='1'] .tab-ind {
+    transform: translateX(100%);
+  }
+
+  [data-mode='2'] .tab-ind {
+    transform: translateX(200%);
+  }
+
+  [data-mode='3'] .tab-ind {
+    transform: translateX(300%);
+  }
+
+  [data-mode='0'] .tab:nth-of-type(2),
+  [data-mode='1'] .tab:nth-of-type(3),
+  [data-mode='2'] .tab:nth-of-type(4),
+  [data-mode='3'] .tab:nth-of-type(5) {
+    color: var(--ink);
+  }
+
+  .picks {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .pick {
+    position: relative;
+  }
+
+  .pick .scene {
+    aspect-ratio: 4 / 3;
+    opacity: 0.4;
+    transition: opacity 0.4s;
+  }
+
+  .ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 0.5rem;
+    box-shadow: inset 0 0 0 2.5px var(--red);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .check {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.3rem;
+    display: grid;
+    place-items: center;
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 0 2px var(--white);
+    opacity: 0;
+    transform: scale(0.6);
+    transition:
+      opacity 0.25s,
+      transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .check svg,
+  .ok svg {
+    width: 0.8rem;
+    height: 0.8rem;
+    fill: none;
+    stroke: var(--white);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  [data-mode='0'] .m0 .scene,
+  [data-mode='1'] .m1 .scene,
+  [data-mode='2'] .m2 .scene,
+  [data-mode='3'] .m3 .scene,
+  [data-mode='0'] .m0 .ring,
+  [data-mode='1'] .m1 .ring,
+  [data-mode='2'] .m2 .ring,
+  [data-mode='3'] .m3 .ring {
+    opacity: 1;
+  }
+
+  [data-mode='0'] .m0 .check,
+  [data-mode='1'] .m1 .check,
+  [data-mode='2'] .m2 .check,
+  [data-mode='3'] .m3 .check {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Consistency score */
+
+  .score-title {
+    display: grid;
+    gap: 0.1rem;
+  }
+
+  .label {
+    color: var(--gray);
+  }
+
+  .state {
+    display: grid;
+    font-weight: 650;
+    font-size: 0.9375rem;
+  }
+
+  .state > span,
+  .status > span {
+    grid-area: 1 / 1;
+    transition: opacity 0.4s;
+  }
+
+  .st-from {
+    opacity: 0;
+  }
+
+  [data-step] .st-from {
+    opacity: 1;
+  }
+
+  [data-step] .st-to {
+    opacity: 0;
+  }
+
+  .st-to {
+    color: var(--salmon);
+  }
+
+  .harmonize {
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    background: var(--red);
+    color: var(--white);
+    font-weight: 650;
+    transition: transform 0.18s;
+  }
+
+  .press .harmonize {
+    transform: scale(0.92);
+  }
+
+  .score-num {
+    display: flex;
+    align-items: baseline;
+    gap: 0.2rem;
+    font: 800 3rem / 1 var(--font-display);
+    letter-spacing: -0.04em;
+  }
+
+  .of {
+    color: var(--gray);
+    font: 600 0.875rem / 1 var(--font-body);
+    letter-spacing: 0;
+  }
+
+  .segs {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 3px;
+    height: 1.4rem;
+  }
+
+  .segs i {
+    position: relative;
+    border-radius: 2px;
+    background: var(--panel-2);
+  }
+
+  .segs i::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--salmon);
+    opacity: 0;
+  }
+
+  .segs .a::after,
+  .segs .b::after {
+    opacity: 1;
+    transition: opacity 0.2s calc(0.2s + (var(--k) - 16) * 0.09s);
+  }
+
+  [data-step='0'] .segs .b::after {
+    opacity: 0;
+    transition-delay: 0s;
+  }
+
+  .segs--thin {
+    height: 0.6rem;
+  }
+
+  .segs--thin i::after {
+    background: var(--red);
+  }
+
+  .segs--thin .b::after {
+    transition-delay: calc(var(--k) * 0.065s);
+  }
+
+  .metrics {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .metrics div {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .metrics dt {
+    color: var(--gray);
+  }
+
+  .metrics dd {
+    height: 0.35rem;
+    border-radius: 999px;
+    background: var(--panel-2);
+    overflow: hidden;
+  }
+
+  .bar {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--mist);
+    transform-origin: 0 50%;
+    transform: scaleX(var(--to));
+    transition: transform 1.4s var(--ease) 0.2s;
+  }
+
+  [data-step='0'] .bar {
+    transform: scaleX(var(--from));
+    transition-duration: 0.6s;
+    transition-delay: 0s;
+  }
+
+  /* Bulk crop */
+
+  .ratios {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    padding: 0.2rem;
+    border-radius: 999px;
+    background: var(--card);
+    color: var(--gray);
+    font-weight: 650;
+    text-align: center;
+  }
+
+  .ratio {
+    position: relative;
+    padding: 0.25rem;
+    transition: color 0.3s;
+  }
+
+  .ratio-ind {
+    position: absolute;
+    inset: 0.2rem auto 0.2rem 0.2rem;
+    width: calc((100% - 0.4rem) / var(--n));
+    border-radius: 999px;
+    background: var(--red);
+    transition: transform 0.55s var(--ease);
+  }
+
+  [data-ratio='1'] .ratio-ind {
+    transform: translateX(100%);
+  }
+
+  [data-ratio='2'] .ratio-ind {
+    transform: translateX(200%);
+  }
+
+  [data-ratio='0'] .ratio:nth-of-type(2),
+  [data-ratio='1'] .ratio:nth-of-type(3),
+  [data-ratio='2'] .ratio:nth-of-type(4) {
+    color: var(--white);
+  }
+
+  .crops {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .cropbox {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    isolation: isolate;
+  }
+
+  .cropbox .scene {
+    position: absolute;
+    inset: 0;
+    border-radius: 0;
+  }
+
+  .frame {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border: 1.5px solid var(--white);
+    border-radius: 2px;
+    box-shadow: 0 0 0 100vmax rgb(20 20 22 / 0.6);
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.92);
+    transition:
+      opacity 0.45s,
+      transform 0.6s var(--ease);
+  }
+
+  .f0 {
+    width: 80%;
+    height: 100%;
+    --x: var(--dx);
+    --y: 0%;
+  }
+
+  .f1 {
+    width: 56.25%;
+    height: 100%;
+    --x: var(--dx);
+    --y: 0%;
+  }
+
+  .f2 {
+    width: 100%;
+    height: 56.25%;
+    --x: 0%;
+    --y: var(--dy);
+  }
+
+  [data-ratio='0'] .f0,
+  [data-ratio='1'] .f1,
+  [data-ratio='2'] .f2 {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y)));
+  }
+
+  /* Batch export */
+
+  .ex-title {
+    font-weight: 650;
+    font-size: 0.9375rem;
+  }
+
+  .ex-meta {
+    color: var(--gray);
+    white-space: nowrap;
+  }
+
+  .files {
+    display: grid;
+    gap: 0.15rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .files li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.4rem;
+    background: var(--card);
+    transition:
+      opacity 0.35s calc(var(--k) * 0.26s),
+      transform 0.5s var(--ease) calc(var(--k) * 0.26s);
+  }
+
+  .fname {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fsize {
+    color: var(--gray);
+  }
+
+  .ok {
+    display: grid;
+    place-items: center;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: var(--red);
+    transition:
+      opacity 0.2s calc(var(--k) * 0.26s + 0.18s),
+      transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--k) * 0.26s + 0.18s);
+  }
+
+  .ok svg {
+    width: 0.7rem;
+    height: 0.7rem;
+  }
+
+  [data-step='0'] .files li {
+    opacity: 0.35;
+    transform: translateX(-4px);
+    transition-delay: 0s;
+  }
+
+  [data-step='0'] .ok {
+    opacity: 0;
+    transform: scale(0.6);
+    transition-delay: 0s;
+  }
+
+  .status {
+    display: grid;
+    color: var(--mist);
+    font-weight: 600;
+  }
+
+  .total {
+    min-width: 4.5em;
+    color: var(--white);
+    font-weight: 650;
+    text-align: right;
+  }
+
+  /* Layout */
+
+  @media (max-width: 62rem) {
+    .bento {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .card,
+    .wide {
+      grid-column: span 2;
+    }
+
+    .card:not(.wide) {
+      grid-column: span 1;
+    }
+
+    .card:last-child {
+      grid-column: span 2;
+    }
+  }
+
+  @media (max-width: 48rem) {
+    .head {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 40rem) {
+    .bento {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .card,
+    .wide,
+    .card:not(.wide),
+    .card:last-child {
+      grid-column: auto;
+    }
+
+    .mock {
+      min-height: 0;
+    }
+  }
+</style>
