@@ -32,14 +32,14 @@ const tileStyle = (t: { a: string; b: string; c: string; sun?: string }) =>
 <section class="only dark" id={group.id} aria-labelledby="only-title">
   <div class="container">
     <div class="head">
-      <h2 id="only-title" class="display-l"><span class="accent">Only</span> in Jumpman.</h2>
-      <p class="lead">{group.intro}</p>
+      <h2 id="only-title" class="display-l" data-reveal><span class="accent">Only</span> in Jumpman.</h2>
+      <p class="lead" data-reveal>{group.intro}</p>
     </div>
 
     <div class="ticks" aria-hidden="true"></div>
 
     <div class="demos">
-      <figure class="demo">
+      <figure class="demo" data-reveal>
         <div class="demo-body describe">
           <div class="field">
             <span class="field-label">Describe the edit</span>
@@ -67,7 +67,7 @@ const tileStyle = (t: { a: string; b: string; c: string; sun?: string }) =>
         </figcaption>
       </figure>
 
-      <figure class="demo">
+      <figure class="demo" data-reveal>
         <div class="demo-body match" aria-hidden="true">
           <div class="ref">
             <div class="tile" style={tileStyle({ a: '#FFC9AE', b: '#F06A80', c: '#A63B5C' })}></div>
@@ -93,7 +93,7 @@ const tileStyle = (t: { a: string; b: string; c: string; sun?: string }) =>
 
     <ul class="grid" role="list">
       {group.features.map((feature) => <FeatureItem feature={feature} />)}
-      <li class="try">
+      <li class="try" data-reveal>
         <p>Everything above ships in the free web app. No account, no upload, no catch.</p>
         <a class="btn btn--primary" href={links.app}>
           Try them all
