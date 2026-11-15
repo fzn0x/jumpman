@@ -14,10 +14,26 @@ import { bytes } from '../lib/format.ts'
 import { pickFiles } from '../lib/hooks.ts'
 import { openReviewFile } from '../lib/reviewImport.ts'
 import { loadSamples } from '../lib/samples.ts'
+import type { RawDecoder } from '../lib/types.ts'
 import { toast } from '../state/editor.ts'
 import { resetEverything, updateSettings, useLibrary } from '../state/library.ts'
 import { navigate } from '../state/router.ts'
-import { Button, IconButton, SectionTitle } from '../ui/primitives.tsx'
+import { Button, Chip, IconButton, SectionTitle } from '../ui/primitives.tsx'
+
+const RAW_DECODERS: { value: RawDecoder; label: string; description: string }[] = [
+  {
+    value: 'libraw',
+    label: 'Full quality (LibRaw)',
+    description:
+      'Decodes the sensor data with LibRaw for full resolution and color. Takes a few seconds per photo and more memory. Files LibRaw cannot read open from their preview.',
+  },
+  {
+    value: 'preview',
+    label: 'Fast (embedded preview)',
+    description:
+      'Opens the JPEG preview the camera stored in the file. Quick, but its size and quality depend on the camera.',
+  },
+]
 
 export function SettingsScreen() {
   const settings = useLibrary((s) => s.settings)
@@ -52,6 +68,26 @@ export function SettingsScreen() {
             className="mt-1 h-11 w-full rounded-2xl bg-ink-2 px-4 outline-none focus:ring-2 focus:ring-salmon"
           />
         </label>
+
+        <SectionTitle>RAW decoding</SectionTitle>
+        <fieldset>
+          <legend className="sr-only">RAW decoding</legend>
+          <div className="flex flex-wrap gap-2">
+            {RAW_DECODERS.map((d) => (
+              <Chip
+                key={d.value}
+                active={settings.rawDecoder === d.value}
+                onClick={() => updateSettings({ rawDecoder: d.value })}
+              >
+                {d.label}
+              </Chip>
+            ))}
+          </div>
+        </fieldset>
+        <p className="mt-2 text-xs leading-relaxed text-mute">
+          {RAW_DECODERS.find((d) => d.value === settings.rawDecoder)?.description} Applies to RAW
+          files you import from now on.
+        </p>
 
         <SectionTitle>Storage</SectionTitle>
         <div className="space-y-3 rounded-3xl bg-ink-2 p-4 text-sm">

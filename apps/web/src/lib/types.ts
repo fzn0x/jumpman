@@ -12,7 +12,10 @@ export interface Photo {
   /** Capture time from EXIF, falling back to the file date. */
   takenAt?: number
   addedAt: number
-  /** Set when the photo came from a camera RAW file (we edit its embedded preview). */
+  /**
+   * Set when the photo came from a camera RAW file. The stored source is either
+   * LibRaw's decode (already upright, orientation 1) or the embedded preview.
+   */
   raw?: { format: string; orientation: number }
   stats?: PhotoStats
   collectionId: string
@@ -56,6 +59,9 @@ export interface CustomLutMeta {
   source: 'cube' | 'sample' | 'preset' | 'look'
 }
 
+/** How camera RAW files open: LibRaw decodes the sensor data, `preview` uses the embedded JPEG. */
+export type RawDecoder = 'libraw' | 'preview'
+
 export interface Settings {
   author: string
   exportFormat: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/avif'
@@ -66,6 +72,7 @@ export interface Settings {
   watermarkPosition: 'bottom-right' | 'bottom-left' | 'bottom-center' | 'top-right' | 'center'
   watermarkOpacity: number
   includeXmp: boolean
+  rawDecoder: RawDecoder
   onboarded: boolean
 }
 

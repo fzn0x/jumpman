@@ -66,6 +66,7 @@ export const DEFAULT_SETTINGS: Settings = {
   watermarkPosition: 'bottom-right',
   watermarkOpacity: 0.7,
   includeXmp: false,
+  rawDecoder: 'libraw',
   onboarded: false,
 }
 
@@ -257,7 +258,8 @@ export async function addFiles(collectionId: string, files: File[]): Promise<str
   if (!files.length) return []
   const ids: string[] = []
   set({ importing: { total: files.length, done: 0, errors: [], collectionId } })
-  await importFiles(files, async (result, file, error) => {
+  const options = { rawDecoder: get().settings.rawDecoder }
+  await importFiles(files, options, async (result, file, error) => {
     if (result) {
       const id = addImported(collectionId, result)
       await blobDb.setMany([

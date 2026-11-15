@@ -35,3 +35,16 @@ export function round(v: number, decimals = 2): number {
   const f = 10 ** decimals
   return Math.round(v * f) / f
 }
+
+/**
+ * Returns a runner that executes async tasks one at a time, in call order. A
+ * task that fails does not stop the ones queued behind it.
+ */
+export function serialQueue(): <T>(task: () => Promise<T>) => Promise<T> {
+  let tail: Promise<unknown> = Promise.resolve()
+  return <T>(task: () => Promise<T>): Promise<T> => {
+    const run = tail.then(task, task)
+    tail = run.catch(() => undefined)
+    return run
+  }
+}

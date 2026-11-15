@@ -49,7 +49,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
+        // wasm: the LibRaw decoder (about 1.4 MB), so RAW files open offline.
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2,wasm}'],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         navigateFallback: null,
       },
@@ -63,7 +64,9 @@ export default defineConfig({
     format: 'es',
   },
   // Pre-bundle lazily imported deps so the dev server never reloads mid-import.
+  // libraw-wasm is plain ESM that loads its worker and wasm from next to itself; serve it as is.
   optimizeDeps: {
     include: ['exifr', 'fflate', 'idb-keyval', 'zustand', 'workbox-window', '@capacitor/core'],
+    exclude: ['libraw-wasm'],
   },
 })
