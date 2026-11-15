@@ -49,7 +49,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
+        // wasm: the LibRaw decoder (about 1.4 MB), so RAW files open offline.
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2,wasm}'],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         navigateFallback: null,
       },
