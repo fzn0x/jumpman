@@ -87,7 +87,7 @@ export const featureGroups: FeatureGroup[] = [
       available('Batch before/after grid', 'Review the whole set before and after, side by side.'),
       available(
         'Masking and local adjustments',
-        'Linear, radial, luminance and color-range masks, plus heuristic sky and subject masks that adapt to each photo in the batch.',
+        'Linear, radial, brush, luminance and color-range masks, plus sky and subject masks found by AI models that run on your device and adapt to each photo in the batch.',
       ),
       available(
         'Bulk crop and aspect ratios',
@@ -110,7 +110,7 @@ export const featureGroups: FeatureGroup[] = [
       },
       available(
         'RAW files and Lightroom XMP',
-        'Opens RAW files through their embedded full-size previews (DNG, CR2/CR3, NEF, ARW, RAF, ORF, RW2 and more). Imports and exports XMP compatible with Lightroom, and imports Capture One styles.',
+        'Decodes RAW sensor data on your device with LibRaw (DNG, CR2/CR3, NEF, ARW, RAF, ORF, RW2 and more), with a fast mode that opens the embedded preview. Imports and exports XMP compatible with Lightroom, and imports Capture One styles.',
       ),
     ],
   },
@@ -185,15 +185,6 @@ export const featureGroups: FeatureGroup[] = [
       ),
       roadmap('Real-time collaboration', 'Edit the same batch together, live.'),
       roadmap(
-        'AI segmentation masks',
-        'Sharper subject and object masks from models that run on your device.',
-      ),
-      roadmap('Brush masks', 'Paint an adjustment exactly where you want it.'),
-      roadmap(
-        'Full RAW decoding',
-        'Decode sensor data directly with LibRaw compiled to WebAssembly.',
-      ),
-      roadmap(
         'Publish presets from the app',
         'Upload a preset to the community gallery without leaving Jumpman.',
       ),
@@ -212,6 +203,9 @@ export const builtWith = [
   'React 19',
   'Vite 8',
   'WebGL2',
+  'LibRaw (WebAssembly)',
+  'ONNX Runtime Web',
+  'MediaPipe',
   'Tailwind CSS 4',
   'Astro 7',
   'Capacitor 8 (Android)',
