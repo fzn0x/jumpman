@@ -7,6 +7,7 @@ import { frameOf } from './geometry.ts'
 import { makeCanvas } from './image.ts'
 import { resolveLut } from './luts.ts'
 import { sourceBitmap } from './media.ts'
+import { ensureSubjectMask, subjectResolver, usesSubjectMask } from './segment.ts'
 import type { Batch, Settings } from './types.ts'
 
 export interface ExportOptions {
@@ -125,6 +126,8 @@ export async function exportBatch(
     const { w, h } = fitSize(frame.width * scale, frame.height * scale, opts.maxEdge || limit)
     r.setImage(src, `export:${id}`)
     const layers = layersFor(batch, photos, id)
+    if (usesSubjectMask(layers)) await ensureSubjectMask(photo)
+    const subject = subjectResolver(photo.id)
     const ok = r.render({
       layers,
       luts: resolveLut,
@@ -135,6 +138,7 @@ export async function exportBatch(
       flipH: frame.flipH,
       ...(photo.stats ? { subject: photo.stats.subject } : {}),
       sourceSize: { width: photo.width, height: photo.height },
+      ...(subject ? { maskRaster: subject } : {}),
     })
     src.close()
     if (!ok) throw new Error('The GPU context was lost during export. Try a smaller size.')
