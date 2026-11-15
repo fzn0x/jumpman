@@ -66,6 +66,7 @@ export const DEFAULT_SETTINGS: Settings = {
   watermarkPosition: 'bottom-right',
   watermarkOpacity: 0.7,
   includeXmp: false,
+  rawDecoder: 'libraw',
   onboarded: false,
 }
 
