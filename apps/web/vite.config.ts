@@ -63,7 +63,9 @@ export default defineConfig({
     format: 'es',
   },
   // Pre-bundle lazily imported deps so the dev server never reloads mid-import.
+  // libraw-wasm stays out: pre-bundling breaks the relative URLs of its worker and wasm.
   optimizeDeps: {
     include: ['exifr', 'fflate', 'idb-keyval', 'zustand', 'workbox-window', '@capacitor/core'],
+    exclude: ['libraw-wasm'],
   },
 })

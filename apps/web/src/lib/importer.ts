@@ -1,5 +1,5 @@
-import type { PhotoStats } from '@jumpman/core'
-import type { ImportResult } from './import.worker.ts'
+import { isRawFileName, type PhotoStats, serialQueue } from '@jumpman/core'
+import type { ImportOptions, ImportResult } from './import.worker.ts'
 
 type Pending = { resolve: (v: unknown) => void; reject: (e: Error) => void }
 
@@ -36,13 +36,13 @@ class WorkerPool {
     )
   }
 
-  run<T>(kind: 'import' | 'analyze', file: File): Promise<T> {
+  run<T>(kind: 'import' | 'analyze', file: File, options?: ImportOptions): Promise<T> {
     const w = this.pick()
     const id = this.nextId++
     this.busy.set(w, (this.busy.get(w) ?? 0) + 1)
     return new Promise<T>((resolve, reject) => {
       this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject })
-      w.postMessage({ id, kind, file })
+      w.postMessage({ id, kind, file, options })
     })
   }
 }
@@ -56,8 +56,15 @@ const getPool = () => {
 export const ACCEPTED_TYPES =
   'image/*,.dng,.cr2,.cr3,.crw,.nef,.nrw,.arw,.srf,.sr2,.raf,.orf,.rw2,.pef,.srw,.3fr,.iiq,.erf,.kdc,.dcr,.mrw,.x3f'
 
-export function importFile(file: File): Promise<ImportResult> {
-  return getPool().run<ImportResult>('import', file)
+/**
+ * A LibRaw decode holds the whole sensor image in memory (hundreds of MB for a
+ * 45 MP camera), so only one runs at a time while other files keep importing.
+ */
+const oneRawAtATime = serialQueue()
+
+export function importFile(file: File, options: ImportOptions): Promise<ImportResult> {
+  const job = () => getPool().run<ImportResult>('import', file, options)
+  return options.rawDecoder === 'libraw' && isRawFileName(file.name) ? oneRawAtATime(job) : job()
 }
 
 export function analyzeFile(file: File): Promise<PhotoStats> {
@@ -67,6 +74,7 @@ export function analyzeFile(file: File): Promise<PhotoStats> {
 /** Runs imports with bounded concurrency, reporting progress. */
 export async function importFiles(
   files: File[],
+  options: ImportOptions,
   onEach: (result: ImportResult | null, file: File, error?: Error) => void | Promise<void>,
 ): Promise<void> {
   let i = 0
@@ -76,7 +84,7 @@ export async function importFiles(
       while (i < files.length) {
         const file = files[i++] as File
         try {
-          await onEach(await importFile(file), file)
+          await onEach(await importFile(file, options), file)
         } catch (err) {
           await onEach(null, file, err as Error)
         }
@@ -85,4 +93,4 @@ export async function importFiles(
   )
 }
 
-export type { ImportResult }
+export type { ImportOptions, ImportResult }
