@@ -232,6 +232,9 @@ with everyone, see [community/README.md](./community/README.md).
   [credits](apps/web/public/samples/CREDITS.md).
 - [Bricolage Grotesque](https://github.com/ateliertriay/bricolage) and [Inter](https://rsms.me/inter/)
   under the SIL Open Font License; icons by [Lucide](https://lucide.dev).
+- RAW decoding by [LibRaw](https://www.libraw.org) (LGPL-2.1 or CDDL-1.0) through the
+  [libraw-wasm](https://github.com/ybouane/LibRaw-Wasm) bindings (ISC). See the
+  [third-party notices](./THIRD_PARTY_NOTICES.md).
 
 ## License
 
