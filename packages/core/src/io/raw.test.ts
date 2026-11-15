@@ -4,6 +4,7 @@ import {
   findEmbeddedJpegs,
   isRawFileName,
   RAW_EXTENSIONS,
+  rawImageToRgba,
   readTiffOrientation,
 } from './raw.ts'
 
@@ -242,5 +243,45 @@ describe('readTiffOrientation', () => {
     expect(readTiffOrientation(cr3)).toBe(8)
     expect(extractRawPreview(cr3)).toMatchObject({ width: 1620, orientation: 8 })
     expect(readTiffOrientation(concat(ftyp, zeros(32)))).toBe(1)
+  })
+})
+
+describe('rawImageToRgba', () => {
+  it('expands 8-bit RGB to opaque RGBA', () => {
+    const data = Uint8Array.from([10, 20, 30, 200, 100, 0])
+    const out = rawImageToRgba({ width: 2, height: 1, colors: 3, bits: 8, data })
+    expect(out).toBeInstanceOf(Uint8ClampedArray)
+    expect([...out]).toEqual([10, 20, 30, 255, 200, 100, 0, 255])
+  })
+
+  it('keeps the high byte of 16-bit samples', () => {
+    const data = Uint16Array.from([0xffff, 0x8000, 0x00ff])
+    const out = rawImageToRgba({ width: 1, height: 1, colors: 3, bits: 16, data })
+    expect([...out]).toEqual([255, 128, 0, 255])
+  })
+
+  it('spreads monochrome samples over the color channels', () => {
+    const data = Uint8Array.from([7, 250])
+    const out = rawImageToRgba({ width: 1, height: 2, colors: 1, bits: 8, data })
+    expect([...out]).toEqual([7, 7, 7, 255, 250, 250, 250, 255])
+  })
+
+  it('rejects layouts it cannot convert', () => {
+    const rgb = new Uint8Array(12)
+    expect(() => rawImageToRgba({ width: 2, height: 2, colors: 4, bits: 8, data: rgb })).toThrow(
+      /channel/,
+    )
+    expect(() => rawImageToRgba({ width: 2, height: 2, colors: 3, bits: 12, data: rgb })).toThrow(
+      /bit depth/,
+    )
+    expect(() => rawImageToRgba({ width: 2, height: 2, colors: 3, bits: 16, data: rgb })).toThrow(
+      /Sample type/,
+    )
+    expect(() => rawImageToRgba({ width: 3, height: 2, colors: 3, bits: 8, data: rgb })).toThrow(
+      /truncated/,
+    )
+    expect(() => rawImageToRgba({ width: 0, height: 2, colors: 3, bits: 8, data: rgb })).toThrow(
+      /size/,
+    )
   })
 })

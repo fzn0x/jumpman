@@ -1,6 +1,7 @@
 /**
- * Camera RAW support via the JPEG previews that cameras embed in raw files.
- * We never demosaic sensor data; the largest embedded preview stands in for it.
+ * Camera RAW support. The app decodes sensor data with LibRaw (WebAssembly)
+ * and falls back to the largest JPEG preview the camera embedded in the file.
+ * This module holds the format-level pieces that need no decoder.
  */
 
 export const RAW_EXTENSIONS = [
@@ -254,4 +255,52 @@ export function readTiffOrientation(bytes: Uint8Array): number {
     return 1
   }
   return tiffOrientationAt(bytes, 0) ?? 1
+}
+
+/** An image as LibRaw's `dcraw_make_mem_image` returns it: interleaved rows, top to bottom. */
+export interface DecodedRawImage {
+  width: number
+  height: number
+  /** Samples per pixel: 3 for RGB, 1 for monochrome sensors. */
+  colors: number
+  /** 8 or 16 bits per sample. */
+  bits: number
+  data: Uint8Array | Uint16Array
+}
+
+/**
+ * Expands a decoded raw image to 8-bit RGBA, ready for `ImageData`. 16-bit
+ * samples keep their high byte. Throws on layouts it cannot convert, so the
+ * caller can fall back to the embedded preview.
+ */
+export function rawImageToRgba(img: DecodedRawImage): Uint8ClampedArray<ArrayBuffer> {
+  const { width, height, colors, bits, data } = img
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) {
+    throw new Error(`Invalid decoded size ${width}x${height}`)
+  }
+  if (colors !== 1 && colors !== 3) throw new Error(`Unsupported channel count ${colors}`)
+  const wide = bits === 16
+  if (!wide && bits !== 8) throw new Error(`Unsupported bit depth ${bits}`)
+  if (wide !== data instanceof Uint16Array) throw new Error('Sample type does not match bit depth')
+  const n = width * height
+  if (data.length < n * colors) throw new Error('Decoded image is truncated')
+  const out = new Uint8ClampedArray(n * 4)
+  const shift = wide ? 8 : 0
+  if (colors === 3) {
+    for (let p = 0, s = 0, o = 0; p < n; p++, s += 3, o += 4) {
+      out[o] = (data[s] as number) >> shift
+      out[o + 1] = (data[s + 1] as number) >> shift
+      out[o + 2] = (data[s + 2] as number) >> shift
+      out[o + 3] = 255
+    }
+  } else {
+    for (let p = 0, o = 0; p < n; p++, o += 4) {
+      const v = (data[p] as number) >> shift
+      out[o] = v
+      out[o + 1] = v
+      out[o + 2] = v
+      out[o + 3] = 255
+    }
+  }
+  return out
 }
