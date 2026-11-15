@@ -111,3 +111,51 @@ photo editing among its intended uses and licenses the model under the
 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). Jumpman ships it unmodified as
 `assets/magic_touch-*.tflite` (SHA-256
 `e24338a717c1b7ad8d159666677ef400babb7f33b8ad60c4d96db4ecf694cd25`).
+
+## ONNX Runtime Web
+
+Sky masks run on the device with [ONNX Runtime Web](https://github.com/microsoft/onnxruntime) 1.31.1
+(`onnxruntime-web`), by Microsoft Corporation, licensed under the
+[MIT License](https://github.com/microsoft/onnxruntime/blob/main/LICENSE). Its WebAssembly runtime is
+the file `assets/ort-wasm-simd-threaded-*.wasm` in the app build and loads only when a sky mask is
+first used. ONNX Runtime includes third-party components listed in its
+[ThirdPartyNotices.txt](https://github.com/microsoft/onnxruntime/blob/main/ThirdPartyNotices.txt).
+
+```
+MIT License
+
+Copyright (c) Microsoft Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial
+portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+```
+
+## EfficientViT-Seg sky model
+
+The sky mask model is derived from EfficientViT-Seg B1 trained on ADE20K, by MIT Han Lab
+([EfficientViT](https://github.com/mit-han-lab/efficientvit), commit
+`de7d7733cc0329f391b33f1f459271562ec27bd5`, weights `efficientvit_seg_b1_ade20k.pt` from
+<https://huggingface.co/han-cai/efficientvit-seg>), licensed under the
+[Apache License 2.0](https://github.com/mit-han-lab/efficientvit/blob/master/LICENSE). Paper:
+[EfficientViT: Multi-Scale Linear Attention for High-Resolution Dense Prediction](https://arxiv.org/abs/2205.14756).
+
+**Modified by the Jumpman contributors**: the network is wrapped with a softmax over the 150 ADE20K
+classes, only the sky probability is kept, it is exported to ONNX with dynamic input size, and its
+weights are stored as float16. [`scripts/export-sky-model.py`](./scripts/export-sky-model.py) makes the
+file from the original checkpoint. Jumpman ships it as `assets/sky_b1-*.onnx` (SHA-256 `f0e07943f5e1d16ef08b2313dfa39e065c38812441cd5dd6fb067fe4d7aad25a`).
+
+The weights were trained on the [ADE20K dataset](https://arxiv.org/abs/1608.05442) (MIT CSAIL). ADE20K's
+terms of use license its images for non-commercial research and education and do not address models
+trained on them. Jumpman ships only the trained weights, not any ADE20K images or annotations.
