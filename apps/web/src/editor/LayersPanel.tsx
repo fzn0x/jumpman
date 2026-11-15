@@ -15,6 +15,7 @@ import {
   Check,
   ChevronDown,
   Circle,
+  Cloud,
   Copy,
   Eye,
   EyeOff,
@@ -31,7 +32,7 @@ import {
   X,
 } from 'lucide-react'
 import { useState } from 'react'
-import { aiMasksEnabled, useSegments } from '../lib/segment.ts'
+import { aiMasksEnabled, type SegmentKind, useSegments } from '../lib/segment.ts'
 import { editor, useEditor } from '../state/editor.ts'
 import { useLibrary } from '../state/library.ts'
 import { Menu } from '../ui/Menu.tsx'
@@ -112,23 +113,41 @@ function describe(layer: Layer): string {
   return parts.join(' · ') || 'Whole photo'
 }
 
-/** Where a subject mask comes from on the current photo, and the quick estimate's size. */
-function SubjectSource({ ctx, size }: { ctx: BatchContext; size: React.ReactNode }) {
+const SOURCE_TEXT: Record<SegmentKind, { quick: string; ready: string; pending: string }> = {
+  subject: {
+    quick: 'Quick estimate: a soft area around each photo’s focal point.',
+    ready: 'Subject found on this device, shaped to each photo.',
+    pending: 'Finding the subject on this device…',
+  },
+  sky: {
+    quick: 'Quick estimate: sky-like colors toward the top of each photo.',
+    ready: 'Sky found on this device, shaped to each photo.',
+    pending: 'Finding the sky on this device…',
+  },
+}
+
+/** Where a sky or subject mask comes from on the current photo, plus the quick estimate's controls. */
+function MaskSource({
+  ctx,
+  kind,
+  quick,
+}: {
+  ctx: BatchContext
+  kind: SegmentKind
+  quick?: React.ReactNode
+}) {
   const photoId = ctx.current?.id
-  const status = useSegments((s) => (photoId ? s.status[photoId] : undefined))
+  const status = useSegments((s) => (photoId ? s.status[`${kind}:${photoId}`] : undefined))
   // Re-read when the setting changes.
   useLibrary((s) => s.settings.aiMasks)
-  const ai = aiMasksEnabled() && status !== 'failed'
+  const ai = aiMasksEnabled(kind) && status !== 'failed'
+  const text = SOURCE_TEXT[kind]
   return (
-    <div data-subject-mask={ai ? (status ?? 'pending') : 'quick'}>
+    <div data-kind={kind} data-mask-source={ai ? (status ?? 'pending') : 'quick'}>
       <p className="py-1 text-xs leading-relaxed text-mute">
-        {!ai
-          ? 'Quick estimate: a soft area around each photo’s focal point.'
-          : status === 'ready'
-            ? 'Subject found on this device, shaped to each photo.'
-            : 'Finding the subject on this device…'}
+        {!ai ? text.quick : status === 'ready' ? text.ready : text.pending}
       </p>
-      {!ai && size}
+      {!ai && quick}
     </div>
   )
 }
@@ -211,7 +230,9 @@ function MaskEditor({ ctx, layer, own }: { ctx: BatchContext; layer: Layer; own:
           {num('Feather', 'feather', 0, 1)}
         </>
       )}
-      {m?.type === 'subject' && <SubjectSource ctx={ctx} size={num('Size', 'size', 0.1, 1.2)} />}
+      {m?.type === 'subject' && (
+        <MaskSource ctx={ctx} kind="subject" quick={num('Size', 'size', 0.1, 1.2)} />
+      )}
       {m?.type === 'brush' && (
         <p className="py-1 text-xs leading-relaxed text-mute">
           {m.strokes.length
@@ -219,12 +240,7 @@ function MaskEditor({ ctx, layer, own }: { ctx: BatchContext; layer: Layer; own:
             : 'Paint on the photo to choose where this layer applies.'}
         </p>
       )}
-      {m?.type === 'sky' && (
-        <p className="py-1 text-xs leading-relaxed text-mute">
-          Finds sky-like colors toward the top of each photo, so it adapts to every image in the
-          batch.
-        </p>
-      )}
+      {m?.type === 'sky' && <MaskSource ctx={ctx} kind="sky" />}
       {m && (
         <>
           <Switch label="Invert" checked={!!m.invert} onChange={(v) => set({ ...m, invert: v })} />
@@ -521,6 +537,18 @@ export default function LayersPanel({ ctx }: { ctx: BatchContext }) {
                 add(layer)
                 editor.set({ maskLayerId: layer.id })
               },
+            },
+            {
+              label: 'Sky adjust (finds the sky)',
+              icon: Cloud,
+              onSelect: () =>
+                add(
+                  createLayer('basic', {
+                    name: 'Sky adjust',
+                    params: { ...defaultBasic(), exposure: -0.3 },
+                    mask: defaultMask('sky', ctx),
+                  }),
+                ),
             },
             {
               label: 'Subject adjust (finds the subject)',

@@ -5,7 +5,7 @@ import { type FrameSpec, frameOf, placementOf, renderSize } from '../lib/geometr
 import { useSize } from '../lib/hooks.ts'
 import { resolveLut } from '../lib/luts.ts'
 import { previewBitmap, thumbBitmap } from '../lib/media.ts'
-import { ensureSubjectMask, subjectRaster, useSegments, usesSubjectMask } from '../lib/segment.ts'
+import { ensureSegments, segmentKey, segmentResolver, useSegments } from '../lib/segment.ts'
 import { editor, useEditor } from '../state/editor.ts'
 import { commit, dispatch, useLibrary } from '../state/library.ts'
 import { layersFor } from '../state/selectors.ts'
@@ -45,8 +45,9 @@ export function Viewport({ ctx }: { ctx: BatchContext }) {
     : null
   const layers = photo ? layersFor(ctx.batch, photos, photo.id) : []
   const aiMasks = useLibrary((s) => s.settings.aiMasks)
-  const needsSubject = usesSubjectMask(layers)
-  const segment = useSegments((s) => (photo ? s.status[photo.id] : undefined))
+  const segment = useSegments((s) =>
+    photo ? `${s.status[`sky:${photo.id}`]}${s.status[`subject:${photo.id}`]}` : '',
+  )
   const dpr = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1
   const view =
     frame && size.width
@@ -89,11 +90,13 @@ export function Viewport({ ctx }: { ctx: BatchContext }) {
     }
   }, [photo?.id])
 
-  // Segment the subject on demand; the quick estimate shows until the mask is ready.
+  // Segment sky and subject on demand; the quick estimate shows until a mask is ready.
+  const layersKey = JSON.stringify(layers.map((l) => [l.enabled, l.opacity > 0, l.mask?.type]))
+  // biome-ignore lint/correctness/useExhaustiveDependencies: layersKey captures the masks in use
   useEffect(() => {
-    if (photo && needsSubject && aiMasks) void ensureSubjectMask(photo)
-  }, [photo, needsSubject, aiMasks])
-  const subject = photo && needsSubject ? subjectRaster(photo.id) : undefined
+    if (photo && aiMasks) void ensureSegments(photo, layers)
+  }, [photo, layersKey, aiMasks])
+  const segments = photo ? segmentResolver(photo.id) : undefined
 
   const mask = maskLayerId ? findLayer(ctx, maskLayerId)?.layer.mask : undefined
   // Tint the painted area while a brush mask is being painted.
@@ -107,7 +110,7 @@ export function Viewport({ ctx }: { ctx: BatchContext }) {
     imageReady,
     lutVersion,
     maskOverlay,
-    subject?.key,
+    photo ? segmentKey(photo.id) : '',
     segment,
   ])
   // biome-ignore lint/correctness/useExhaustiveDependencies: renderKey captures every render input
@@ -125,9 +128,7 @@ export function Viewport({ ctx }: { ctx: BatchContext }) {
         flipH: frame.flipH,
         ...(photo.stats ? { subject: photo.stats.subject } : {}),
         sourceSize: { width: photo.width, height: photo.height },
-        ...(subject
-          ? { maskRaster: (m: Mask) => (m.type === 'subject' ? subject : undefined) }
-          : {}),
+        ...(segments ? { maskRaster: segments } : {}),
         ...(maskOverlay ? { maskOverlay, overlayColor: [0.88, 0, 0] } : {}),
         showOriginal: compare === 'hold',
         split: compare === 'split' ? splitPos : 0,

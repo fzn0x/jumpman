@@ -1,9 +1,10 @@
 /**
- * Subject masks from on-device segmentation. Each photo is segmented once,
- * at most one photo at a time, from its preview and the salient center found
- * at import. Masks are kept in memory and in IndexedDB, and renderers pick
- * them up through a mask raster resolver. Until a mask is ready, or when the
- * model cannot run, subject masks fall back to the quick radial estimate.
+ * Sky and subject masks from on-device segmentation. Each photo is segmented
+ * once per kind, one job at a time, from its preview (and, for the subject,
+ * the salient center found at import). Masks are kept in memory and in
+ * IndexedDB, and renderers pick them up through a mask raster resolver. Until
+ * a mask is ready, or when a model cannot run, the mask falls back to its
+ * quick estimate.
  */
 import type { Layer, MaskRaster, MaskRasterResolver } from '@jumpman/core'
 import { create } from 'zustand'
@@ -11,58 +12,77 @@ import { toast } from '../state/editor.ts'
 import { useLibrary } from '../state/library.ts'
 import { blobDb, photoKeys } from './db.ts'
 import { previewBitmap } from './media.ts'
-import type { SegmentRequest, SegmentResponse } from './segment.worker.ts'
+import type { SegmentKind, SegmentRequest, SegmentResponse } from './segment.worker.ts'
 import type { Photo } from './types.ts'
 
-/** MagicTouch works at 512 x 512; a larger input only costs decode time. */
+export type { SegmentKind }
+
+/** Both models work at about 512 px; a larger input only costs decode time. */
 const INPUT_EDGE = 512
 /** Masks kept in memory (each at most 512 x 512 bytes). */
-const MEMORY_LIMIT = 64
+const MEMORY_LIMIT = 96
+
+const KINDS: SegmentKind[] = ['subject', 'sky']
+const STORAGE_KEY: Record<SegmentKind, (photoId: string) => string> = {
+  subject: photoKeys.subjectMask,
+  sky: photoKeys.skyMask,
+}
 
 export type SegmentStatus = 'pending' | 'ready' | 'failed'
 
-/** Per-photo status; components re-render when a mask arrives. */
+/** Status per `${kind}:${photoId}`; components re-render when a mask arrives. */
 export const useSegments = create<{ status: Record<string, SegmentStatus> }>(() => ({
   status: {},
 }))
 
+const id = (kind: SegmentKind, photoId: string) => `${kind}:${photoId}`
 const rasters = new Map<string, MaskRaster>()
 const pending = new Map<string, Promise<MaskRaster | null>>()
-/** Set when the model fails before it ever worked: it cannot run on this device. */
-let unavailable = false
-let worked = false
+/** A kind whose model failed before it ever worked cannot run on this device. */
+const unavailable = new Set<SegmentKind>()
+const worked = new Set<SegmentKind>()
 
-function setStatus(id: string, status: SegmentStatus) {
-  useSegments.setState((s) => ({ status: { ...s.status, [id]: status } }))
+function setStatus(key: string, status: SegmentStatus) {
+  useSegments.setState((s) => ({ status: { ...s.status, [key]: status } }))
 }
 
-function remember(id: string, raster: MaskRaster) {
-  rasters.delete(id)
-  rasters.set(id, raster)
+function remember(key: string, raster: MaskRaster) {
+  rasters.delete(key)
+  rasters.set(key, raster)
   while (rasters.size > MEMORY_LIMIT) rasters.delete(rasters.keys().next().value as string)
 }
 
-export function aiMasksEnabled(): boolean {
-  return useLibrary.getState().settings.aiMasks && !unavailable
+/** True when on-device masks are on and the model for `kind` can run here. */
+export function aiMasksEnabled(kind: SegmentKind): boolean {
+  return useLibrary.getState().settings.aiMasks && !unavailable.has(kind)
 }
 
-/** True when a visible layer uses a subject mask. */
-export function usesSubjectMask(layers: Layer[]): boolean {
-  return layers.some((l) => l.enabled && l.opacity > 0 && l.mask?.type === 'subject')
+/** The segmentation kinds visible layers use. */
+export function segmentKinds(layers: Layer[]): SegmentKind[] {
+  const used = new Set<string>()
+  for (const l of layers) if (l.enabled && l.opacity > 0 && l.mask) used.add(l.mask.type)
+  return KINDS.filter((k) => used.has(k))
 }
 
-/** The ready subject mask of a photo, if any. */
-export function subjectRaster(photoId: string): MaskRaster | undefined {
-  return aiMasksEnabled() ? rasters.get(photoId) : undefined
+/** The ready mask of a photo, if any. */
+export function segmentRaster(photoId: string, kind: SegmentKind): MaskRaster | undefined {
+  return aiMasksEnabled(kind) ? rasters.get(id(kind, photoId)) : undefined
 }
 
-/** Resolver for renderers: subject masks use the segmentation when it is ready. */
-export function subjectResolver(photoId: string): MaskRasterResolver | undefined {
-  const raster = subjectRaster(photoId)
-  return raster ? (mask) => (mask.type === 'subject' ? raster : undefined) : undefined
+/** Resolver for renderers: sky and subject masks use segmentation once it is ready. */
+export function segmentResolver(photoId: string): MaskRasterResolver | undefined {
+  const sky = segmentRaster(photoId, 'sky')
+  const subject = segmentRaster(photoId, 'subject')
+  if (!sky && !subject) return undefined
+  return (mask) => (mask.type === 'sky' ? sky : mask.type === 'subject' ? subject : undefined)
 }
 
-/* Worker: one at a time, created on first use. */
+/** Content keys of the ready masks, for render caches. */
+export function segmentKey(photoId: string): string {
+  return KINDS.map((k) => segmentRaster(photoId, k)?.key ?? '').join('|')
+}
+
+/* Worker: one job at a time, created on first use. */
 
 let worker: Worker | null = null
 let nextId = 1
@@ -77,7 +97,8 @@ function getWorker(): Worker {
     calls.delete(e.data.id)
   }
   w.onerror = (e) => {
-    for (const [id, done] of calls) done({ id, ok: false, error: e.message || 'Worker failed' })
+    for (const [callId, done] of calls)
+      done({ id: callId, ok: false, error: e.message || 'Worker failed' })
     calls.clear()
     worker = null
   }
@@ -85,14 +106,15 @@ function getWorker(): Worker {
   return w
 }
 
-function runModel(image: ImageBitmap, point: { x: number; y: number }): Promise<SegmentResponse> {
+function runModel(request: Omit<SegmentRequest, 'id'>): Promise<SegmentResponse> {
   const job = queue.then(
     () =>
       new Promise<SegmentResponse>((resolve) => {
-        const id = nextId++
-        calls.set(id, resolve)
-        const request: SegmentRequest = { id, image, point }
-        getWorker().postMessage(request, [image])
+        const callId = nextId++
+        calls.set(callId, resolve)
+        getWorker().postMessage({ ...request, id: callId } satisfies SegmentRequest, [
+          request.image,
+        ])
       }),
   )
   queue = job.catch(() => undefined)
@@ -119,7 +141,7 @@ function decode(buf: ArrayBuffer, key: string): MaskRaster | null {
   return { width, height, data: new Uint8Array(buf, 8), key }
 }
 
-async function compute(photo: Photo, key: string): Promise<MaskRaster> {
+async function compute(photo: Photo, kind: SegmentKind, key: string): Promise<MaskRaster> {
   const preview = await previewBitmap(photo)
   if (!preview) throw new Error(`No preview for ${photo.name}`)
   const s = Math.min(1, INPUT_EDGE / Math.max(preview.width, preview.height))
@@ -128,49 +150,63 @@ async function compute(photo: Photo, key: string): Promise<MaskRaster> {
     resizeHeight: Math.max(1, Math.round(preview.height * s)),
     resizeQuality: 'medium',
   })
-  const res = await runModel(image, photo.stats?.subject ?? { x: 0.5, y: 0.5 })
+  const res = await runModel(
+    kind === 'subject'
+      ? { kind, image, point: photo.stats?.subject ?? { x: 0.5, y: 0.5 } }
+      : { kind, image },
+  )
   if (!res.ok) throw new Error(res.error)
   return { width: res.width, height: res.height, data: res.data, key }
 }
 
+const UNAVAILABLE: Record<SegmentKind, string> = {
+  subject:
+    'On-device subject detection is unavailable here, so subject masks use the quick estimate.',
+  sky: 'On-device sky detection is unavailable here, so sky masks use the quick estimate.',
+}
+
 /**
- * Loads or computes the subject mask of a photo. Resolves to null when AI
+ * Loads or computes a photo's mask of one kind. Resolves to null when AI
  * masks are off or the model cannot run; callers then keep the quick estimate.
  */
-export function ensureSubjectMask(photo: Photo): Promise<MaskRaster | null> {
-  if (!aiMasksEnabled()) return Promise.resolve(null)
-  const hit = rasters.get(photo.id)
+export function ensureSegment(photo: Photo, kind: SegmentKind): Promise<MaskRaster | null> {
+  if (!aiMasksEnabled(kind)) return Promise.resolve(null)
+  const key = id(kind, photo.id)
+  const hit = rasters.get(key)
   if (hit) return Promise.resolve(hit)
-  const running = pending.get(photo.id)
+  const running = pending.get(key)
   if (running) return running
-  const key = photoKeys.subjectMask(photo.id)
+  const storageKey = STORAGE_KEY[kind](photo.id)
   const job = (async () => {
-    setStatus(photo.id, 'pending')
+    setStatus(key, 'pending')
     try {
-      const stored = await blobDb.getBuffer(key)
-      let raster = stored ? decode(stored, key) : null
+      const stored = await blobDb.getBuffer(storageKey)
+      let raster = stored ? decode(stored, storageKey) : null
       if (!raster) {
-        raster = await compute(photo, key)
-        await blobDb.set(key, encode(raster))
+        raster = await compute(photo, kind, storageKey)
+        await blobDb.set(storageKey, encode(raster))
       }
-      worked = true
-      remember(photo.id, raster)
-      setStatus(photo.id, 'ready')
+      worked.add(kind)
+      remember(key, raster)
+      setStatus(key, 'ready')
       return raster
     } catch (err) {
-      console.warn(`Subject segmentation failed for ${photo.name}:`, err)
-      setStatus(photo.id, 'failed')
-      if (!worked && !unavailable) {
-        unavailable = true
-        toast(
-          'On-device subject detection is unavailable here, so subject masks use the quick estimate.',
-        )
+      console.warn(`${kind} segmentation failed for ${photo.name}:`, err)
+      setStatus(key, 'failed')
+      if (!worked.has(kind) && !unavailable.has(kind)) {
+        unavailable.add(kind)
+        toast(UNAVAILABLE[kind])
       }
       return null
     } finally {
-      pending.delete(photo.id)
+      pending.delete(key)
     }
   })()
-  pending.set(photo.id, job)
+  pending.set(key, job)
   return job
+}
+
+/** Loads or computes every mask kind the layers use. */
+export async function ensureSegments(photo: Photo, layers: Layer[]): Promise<void> {
+  await Promise.all(segmentKinds(layers).map((kind) => ensureSegment(photo, kind)))
 }

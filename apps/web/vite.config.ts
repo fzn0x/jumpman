@@ -53,14 +53,14 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2,wasm}'],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         navigateFallback: null,
-        // On-device segmentation (about 21 MB) is too large to precache for every visitor.
-        // It is cached the first time a subject mask needs it, then works offline.
-        globIgnores: ['**/vision_wasm_*'],
+        // On-device segmentation (runtimes and models, about 45 MB) is too large to precache
+        // for every visitor. Each part is cached the first time a mask needs it, then works offline.
+        globIgnores: ['**/vision_wasm_*', '**/ort-wasm-*'],
         runtimeCaching: [
           {
-            urlPattern: /\/assets\/(magic_touch|vision_wasm_)[^/]*$/,
+            urlPattern: /\/assets\/(magic_touch|sky_b1|vision_wasm_|ort-wasm-)[^/]*$/,
             handler: 'CacheFirst',
-            options: { cacheName: 'jumpman-segmentation', expiration: { maxEntries: 6 } },
+            options: { cacheName: 'jumpman-segmentation', expiration: { maxEntries: 8 } },
           },
         ],
       },
