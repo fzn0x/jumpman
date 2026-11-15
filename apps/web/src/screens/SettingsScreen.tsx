@@ -35,6 +35,21 @@ const RAW_DECODERS: { value: RawDecoder; label: string; description: string }[] 
   },
 ]
 
+const SUBJECT_MASKS = [
+  {
+    ai: true,
+    label: 'On-device AI',
+    description:
+      'Finds the main subject of each photo with a segmentation model that runs on your device, so nothing is uploaded. In the web app the model (about 10 MB) downloads once, the first time you use a subject mask.',
+  },
+  {
+    ai: false,
+    label: 'Quick estimate',
+    description:
+      'Uses a soft area around each photo’s focal point. Instant, but it only roughly follows the subject’s shape.',
+  },
+]
+
 export function SettingsScreen() {
   const settings = useLibrary((s) => s.settings)
   const [usage, setUsage] = useState<{ usage: number; quota: number } | null>(null)
@@ -113,6 +128,25 @@ export function SettingsScreen() {
             sync is on the roadmap.
           </p>
         </div>
+
+        <SectionTitle>Subject masks</SectionTitle>
+        <fieldset>
+          <legend className="sr-only">Subject masks</legend>
+          <div className="flex flex-wrap gap-2">
+            {SUBJECT_MASKS.map((o) => (
+              <Chip
+                key={o.label}
+                active={settings.aiMasks === o.ai}
+                onClick={() => updateSettings({ aiMasks: o.ai })}
+              >
+                {o.label}
+              </Chip>
+            ))}
+          </div>
+        </fieldset>
+        <p className="mt-2 text-xs leading-relaxed text-mute">
+          {SUBJECT_MASKS.find((o) => o.ai === settings.aiMasks)?.description}
+        </p>
 
         <SectionTitle>Get started</SectionTitle>
         <div className="grid gap-2">
