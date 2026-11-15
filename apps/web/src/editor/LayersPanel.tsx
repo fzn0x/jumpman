@@ -15,6 +15,7 @@ import {
   Check,
   ChevronDown,
   Circle,
+  Cloud,
   Copy,
   Eye,
   EyeOff,
@@ -536,6 +537,18 @@ export default function LayersPanel({ ctx }: { ctx: BatchContext }) {
                 add(layer)
                 editor.set({ maskLayerId: layer.id })
               },
+            },
+            {
+              label: 'Sky adjust (finds the sky)',
+              icon: Cloud,
+              onSelect: () =>
+                add(
+                  createLayer('basic', {
+                    name: 'Sky adjust',
+                    params: { ...defaultBasic(), exposure: -0.3 },
+                    mask: defaultMask('sky', ctx),
+                  }),
+                ),
             },
             {
               label: 'Subject adjust (finds the subject)',
