@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { defaultBasic } from './basic.ts'
 import { createBranch, createGlobalEdit, hasOverride, resolveLayers } from './edit.ts'
-import { BASE_LAYER_ID, createBaseLayer, createLayer } from './layers.ts'
+import {
+  BASE_LAYER_ID,
+  type BrushStroke,
+  createBaseLayer,
+  createLayer,
+  type Mask,
+} from './layers.ts'
 import {
   applyOp,
   applyOps,
@@ -11,6 +17,7 @@ import {
   overrideFromLayers,
   recordStep,
 } from './ops.ts'
+import { createPreset, presetFromShareString, presetToShareString } from './preset.ts'
 
 const photo = (photoId: string) => ({ kind: 'photo', photoId }) as const
 const baseOf = (layers: ReturnType<typeof resolveLayers>) => {
@@ -169,5 +176,68 @@ describe('macros', () => {
     expect(describeStep(steps[1] as MacroStep)).toBe('Auto-match')
     const ops = steps.flatMap((s) => (s.kind === 'op' ? [s.op] : []))
     expect(baseOf(applyOps(createBranch(), ops).global.layers).exposure).toBe(0.3)
+  })
+})
+
+describe('brush masks', () => {
+  const stroke = (points: number[], mode: 'paint' | 'erase' = 'paint'): BrushStroke => ({
+    mode,
+    size: 0.05,
+    feather: 0.5,
+    flow: 0.8,
+    points,
+  })
+  const withStrokes = (...strokes: BrushStroke[]): Mask => ({ type: 'brush', strokes })
+  const layer = () =>
+    createLayer('basic', {
+      id: 'brush',
+      params: { ...defaultBasic(), exposure: 0.3 },
+      mask: withStrokes(),
+    })
+
+  it('adds one stroke per update on a batch layer', () => {
+    let b = applyOp(createBranch(), { type: 'addLayer', layer: layer(), scope: GLOBAL })
+    const one = withStrokes(stroke([0.1, 0.2, 0.3, 0.4]))
+    const two = withStrokes(stroke([0.1, 0.2, 0.3, 0.4]), stroke([0.3, 0.4], 'erase'))
+    b = applyOp(b, { type: 'updateLayer', layerId: 'brush', patch: { mask: one }, scope: GLOBAL })
+    b = applyOp(b, { type: 'updateLayer', layerId: 'brush', patch: { mask: two }, scope: GLOBAL })
+    for (const id of ['p1', 'p2'])
+      expect(resolveLayers(b.global, b.photos[id]).find((l) => l.id === 'brush')?.mask).toEqual(two)
+    // Individual mode cannot repaint a batch layer, like other masks.
+    const same = applyOp(b, {
+      type: 'updateLayer',
+      layerId: 'brush',
+      patch: { mask: one },
+      scope: photo('p1'),
+    })
+    expect(resolveLayers(same.global, same.photos.p1).find((l) => l.id === 'brush')?.mask).toEqual(
+      two,
+    )
+    b = applyOp(b, { type: 'updateLayer', layerId: 'brush', patch: { mask: null }, scope: GLOBAL })
+    expect(b.global.layers.find((l) => l.id === 'brush')?.mask).toBeUndefined()
+  })
+
+  it('paints photo-only layers and pastes them as copies', () => {
+    const mask = withStrokes(stroke([0.5, 0.5, 0.6, 0.6]))
+    let b = applyOps(createBranch(), [
+      { type: 'addLayer', layer: layer(), scope: photo('p1') },
+      { type: 'updateLayer', layerId: 'brush', patch: { mask }, scope: photo('p1') },
+    ])
+    expect(b.photos.p1?.override.layers?.[0]?.mask).toEqual(mask)
+    expect(resolveLayers(b.global, b.photos.p2).some((l) => l.id === 'brush')).toBe(false)
+    const copied = resolveLayers(b.global, b.photos.p1)
+    b = applyOp(b, { type: 'pasteToPhotos', photoIds: ['p2'], layers: copied })
+    const pasted = b.photos.p2?.override.layers?.[0]?.mask
+    expect(pasted).toEqual(mask)
+    expect(pasted).not.toBe(mask)
+  })
+
+  it('round-trips through presets and share strings', () => {
+    const mask = withStrokes(stroke([0.1234, 0.5678, 0.9, 0.1]), stroke([0.5, 0.5], 'erase'))
+    const preset = createPreset('Dodge', {
+      layers: [createBaseLayer(), { ...layer(), mask: { ...mask, invert: true } }],
+    })
+    const back = presetFromShareString(presetToShareString(preset))
+    expect(back.layers[1]?.mask).toEqual({ ...mask, invert: true })
   })
 })
