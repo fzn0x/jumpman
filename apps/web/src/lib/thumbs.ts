@@ -61,6 +61,7 @@ export function renderEdited(
       rotate: frame.rotate,
       flipH: frame.flipH,
       ...(photo.stats ? { subject: photo.stats.subject } : {}),
+      sourceSize: { width: photo.width, height: photo.height },
     })
     if (!ok) return null
     const bmp = (r.canvas as OffscreenCanvas).transferToImageBitmap()
