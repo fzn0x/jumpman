@@ -79,7 +79,7 @@ drop, a carousel post. Jumpman treats the **batch** as the unit of work:
 | **Batch export** | Resize, JPEG/PNG/WebP/AVIF, quality, watermark, filename patterns (`{collection}-{n:3}`), ZIP download, save to a folder, or the share sheet. Saves to Documents/Jumpman on Android. |
 | **Non-destructive history** | Per-batch undo/redo that survives reloads, and revert-to-original for a batch or a whole collection. |
 | **Advanced color** | Monotone tone curves (RGB + per channel), 8-band HSL, split toning and a library of 15 built-in LUTs with live previews on your photo. Import and export `.cube`. |
-| **RAW & XMP** | Opens DNG, CR2, CR3, NEF, ARW, RAF, ORF, RW2 and more through their embedded full-size previews. Imports and exports Lightroom/Camera Raw XMP (single presets or per-photo sidecars) and imports Capture One styles. |
+| **RAW & XMP** | Decodes the sensor data of DNG, CR2, CR3, NEF, ARW, RAF, ORF, RW2 and more with LibRaw in WebAssembly, on your device and offline. A fast mode opens the embedded preview instead, which is also the fallback for files LibRaw cannot read. Imports and exports Lightroom/Camera Raw XMP (single presets or per-photo sidecars) and imports Capture One styles. |
 
 ### Only in Jumpman
 
@@ -104,7 +104,6 @@ drop, a carousel post. Jumpman treats the **batch** as the unit of work:
 - End-to-end encrypted cloud sync across devices
 - Real-time collaboration
 - On-device AI segmentation masks
-- Full RAW decoding (LibRaw in WebAssembly)
 - Publishing presets to the community gallery from inside the app
 
 ## Install
@@ -185,7 +184,7 @@ Keyboard: `←`/`→` switch photos, `G` toggles Global/Individual, hold `\` for
 | Format | Import | Export |
 | --- | :---: | :---: |
 | JPEG, PNG, WebP, AVIF (HEIC where the browser supports it) | ✅ | ✅ (HEIC: import only) |
-| Camera RAW: DNG, CR2, CR3, NEF, ARW, RAF, ORF, RW2, PEF, SRW, … (embedded preview) | ✅ | — |
+| Camera RAW: DNG, CR2, CR3, NEF, ARW, RAF, ORF, RW2, PEF, SRW, … (full decode with LibRaw, or the embedded preview) | ✅ | — |
 | Lightroom / Camera Raw `.xmp` (presets and sidecars) | ✅ | ✅ |
 | Capture One `.costyle` / `.copreset` | ✅ | — |
 | `.cube` 3D LUTs (and 1D) | ✅ | ✅ (bake your look into a LUT) |
