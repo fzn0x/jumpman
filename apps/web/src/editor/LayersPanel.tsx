@@ -11,6 +11,7 @@ import {
 import {
   ArrowDown,
   ArrowUp,
+  Brush,
   Check,
   ChevronDown,
   Circle,
@@ -32,6 +33,7 @@ import { useState } from 'react'
 import { editor, useEditor } from '../state/editor.ts'
 import { Menu } from '../ui/Menu.tsx'
 import { Button, Chip, cx, Slider, Switch } from '../ui/primitives.tsx'
+import { BrushToolbar } from './Brush.tsx'
 import { type BatchContext, finish, run, scopeLayers } from './context.ts'
 
 const KIND_ICON: Record<Layer['kind'], LucideIcon> = {
@@ -46,6 +48,7 @@ const MASK_LABELS: Record<MaskType | 'none', string> = {
   none: 'None',
   radial: 'Radial',
   linear: 'Linear',
+  brush: 'Brush',
   luminance: 'Brightness',
   color: 'Color range',
   sky: 'Sky',
@@ -58,6 +61,8 @@ export function defaultMask(type: MaskType, ctx: BatchContext): Mask {
       return { type, cx: 0.5, cy: 0.5, rx: 0.3, ry: 0.3, feather: 0.5 }
     case 'linear':
       return { type, x0: 0.5, y0: 0, x1: 0.5, y1: 0.6 }
+    case 'brush':
+      return { type, strokes: [] }
     case 'luminance':
       return { type, min: 0.6, max: 1, feather: 0.15 }
     case 'color': {
@@ -82,6 +87,20 @@ export function defaultMask(type: MaskType, ctx: BatchContext): Mask {
       return { type, size: 0.55 }
   }
 }
+
+const MASK_PICKER = [
+  'none',
+  'radial',
+  'linear',
+  'brush',
+  'luminance',
+  'color',
+  'sky',
+  'subject',
+] as const
+
+/** Masks edited directly on the photo (handles or painting). */
+const ON_PHOTO = new Set<MaskType | 'none'>(['radial', 'linear', 'brush'])
 
 function describe(layer: Layer): string {
   const parts = layer.name === LAYER_LABELS[layer.kind] ? [] : [LAYER_LABELS[layer.kind]]
@@ -125,20 +144,18 @@ function MaskEditor({ ctx, layer, own }: { ctx: BatchContext; layer: Layer; own:
   return (
     <div>
       <div className="scrollbar-none -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-        {(['none', 'radial', 'linear', 'luminance', 'color', 'sky', 'subject'] as const).map(
-          (t) => (
-            <Chip
-              key={t}
-              active={(m?.type ?? 'none') === t}
-              onClick={() => {
-                set(t === 'none' ? null : defaultMask(t, ctx))
-                editor.set({ maskLayerId: t === 'radial' || t === 'linear' ? layer.id : null })
-              }}
-            >
-              {MASK_LABELS[t]}
-            </Chip>
-          ),
-        )}
+        {MASK_PICKER.map((t) => (
+          <Chip
+            key={t}
+            active={(m?.type ?? 'none') === t}
+            onClick={() => {
+              set(t === 'none' ? null : defaultMask(t, ctx))
+              editor.set({ maskLayerId: ON_PHOTO.has(t) ? layer.id : null })
+            }}
+          >
+            {MASK_LABELS[t]}
+          </Chip>
+        ))}
       </div>
       {m?.type === 'radial' && (
         <>
@@ -171,6 +188,13 @@ function MaskEditor({ ctx, layer, own }: { ctx: BatchContext; layer: Layer; own:
         </>
       )}
       {m?.type === 'subject' && num('Size', 'size', 0.1, 1.2)}
+      {m?.type === 'brush' && (
+        <p className="py-1 text-xs leading-relaxed text-mute">
+          {m.strokes.length
+            ? `${m.strokes.length} stroke${m.strokes.length > 1 ? 's' : ''} painted.`
+            : 'Paint on the photo to choose where this layer applies.'}
+        </p>
+      )}
       {m?.type === 'sky' && (
         <p className="py-1 text-xs leading-relaxed text-mute">
           Finds sky-like colors toward the top of each photo, so it adapts to every image in the
@@ -180,16 +204,22 @@ function MaskEditor({ ctx, layer, own }: { ctx: BatchContext; layer: Layer; own:
       {m && (
         <>
           <Switch label="Invert" checked={!!m.invert} onChange={(v) => set({ ...m, invert: v })} />
-          {(m.type === 'radial' || m.type === 'linear') && (
+          {ON_PHOTO.has(m.type) && (
             <Button
               size="sm"
-              icon={SquareDashed}
+              icon={m.type === 'brush' ? Brush : SquareDashed}
               variant={maskLayerId === layer.id ? 'light' : 'secondary'}
               onClick={() =>
                 editor.set({ maskLayerId: maskLayerId === layer.id ? null : layer.id })
               }
             >
-              {maskLayerId === layer.id ? 'Done positioning' : 'Position on photo'}
+              {m.type === 'brush'
+                ? maskLayerId === layer.id
+                  ? 'Done painting'
+                  : 'Paint on photo'
+                : maskLayerId === layer.id
+                  ? 'Done positioning'
+                  : 'Position on photo'}
             </Button>
           )}
         </>
@@ -420,6 +450,7 @@ export default function LayersPanel({ ctx }: { ctx: BatchContext }) {
   const autoNorm = ctx.state?.norm || ctx.branch.global.adaptive
   return (
     <div className="h-full overflow-y-auto px-4 pt-3 pb-6">
+      <BrushToolbar ctx={ctx} />
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="text-xs leading-relaxed text-mute">
           {ctx.mode === 'global' ? (
@@ -449,6 +480,19 @@ export default function LayersPanel({ ctx }: { ctx: BatchContext }) {
                   name: 'Local adjust',
                   params: { ...defaultBasic(), exposure: 0.3 },
                   mask: defaultMask('radial', ctx),
+                })
+                add(layer)
+                editor.set({ maskLayerId: layer.id })
+              },
+            },
+            {
+              label: 'Brush adjust (paint a mask)',
+              icon: Brush,
+              onSelect: () => {
+                const layer = createLayer('basic', {
+                  name: 'Brush adjust',
+                  params: { ...defaultBasic(), exposure: 0.3 },
+                  mask: defaultMask('brush', ctx),
                 })
                 add(layer)
                 editor.set({ maskLayerId: layer.id })
