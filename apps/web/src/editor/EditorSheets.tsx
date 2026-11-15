@@ -548,6 +548,8 @@ const SHORTCUTS: [string, string][] = [
   ['Ctrl/⌘ Shift Z, Ctrl Y', 'Redo'],
   ['Arrow keys on the dial', 'Fine adjust (Shift for 10×)'],
   ['0 / Delete on the dial', 'Reset slider'],
+  ['[ / ]', 'Brush size smaller / larger'],
+  ['X', 'Brush: switch paint / erase'],
   ['?', 'This list'],
 ]
 

@@ -20,8 +20,24 @@ in vec2 v_uv;
 out vec4 outColor;
 `
 
+/**
+ * Frame geometry: rotated-image position to source-photo uv. Mirrors
+ * frameToSource() in @jumpman/core.
+ */
+const SOURCE_UV = /* glsl */ `
+uniform int u_rotate;
+uniform int u_flip;
+vec2 sourceUv(vec2 p) {
+  if (u_flip == 1) p.x = 1.0 - p.x;
+  if (u_rotate == 1) return vec2(p.y, 1.0 - p.x);
+  if (u_rotate == 2) return vec2(1.0 - p.x, 1.0 - p.y);
+  if (u_rotate == 3) return vec2(1.0 - p.y, p.x);
+  return p;
+}
+`
+
 /** Shared helpers: color conversions and masks. */
-const COMMON = /* glsl */ `
+const COMMON = /* glsl */ `${SOURCE_UV}
 uniform sampler2D u_src;
 uniform vec4 u_uvRect;
 uniform float u_imgAspect;
@@ -32,6 +48,8 @@ uniform vec4 u_maskA;
 uniform vec4 u_maskB;
 uniform int u_maskInvert;
 uniform vec2 u_subject;
+// Raster masks: single channel, source-photo space, top row first.
+uniform sampler2D u_maskTex;
 
 const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
 
@@ -84,7 +102,9 @@ float maskValue(vec3 rgb) {
   if (u_maskType == 0) return 1.0;
   vec2 p = u_uvRect.xy + v_uv * u_uvRect.zw;
   float m = 1.0;
-  if (u_maskType == 1) {
+  if (u_maskType == 7) {
+    m = texture(u_maskTex, sourceUv(p)).r;
+  } else if (u_maskType == 1) {
     vec2 d = vec2((u_maskA.z - u_maskA.x) * u_imgAspect, u_maskA.w - u_maskA.y);
     float len2 = max(dot(d, d), 1e-6);
     float t = dot(vec2((p.x - u_maskA.x) * u_imgAspect, p.y - u_maskA.y), d) / len2;
@@ -121,20 +141,11 @@ void emit(vec3 inC, vec3 outC) {
 `
 
 /** Copies the source photo into the frame: crop, quarter-turn rotation and flip. */
-export const GEOMETRY = `${HEADER}
+export const GEOMETRY = `${HEADER}${SOURCE_UV}
 uniform sampler2D u_image;
 uniform vec4 u_uvRect;
-uniform int u_rotate;
-uniform int u_flip;
 void main() {
-  vec2 p = u_uvRect.xy + v_uv * u_uvRect.zw;
-  if (u_flip == 1) p.x = 1.0 - p.x;
-  vec2 s;
-  if (u_rotate == 1) s = vec2(p.y, 1.0 - p.x);
-  else if (u_rotate == 2) s = vec2(1.0 - p.x, 1.0 - p.y);
-  else if (u_rotate == 3) s = vec2(1.0 - p.y, p.x);
-  else s = p;
-  outColor = vec4(texture(u_image, s).rgb, 1.0);
+  outColor = vec4(texture(u_image, sourceUv(u_uvRect.xy + v_uv * u_uvRect.zw)).rgb, 1.0);
 }
 `
 
@@ -312,6 +323,16 @@ void main() {
   vec3 src = readSrc();
   vec3 coord = clamp(src, 0.0, 1.0) * ((u_lutSize - 1.0) / u_lutSize) + 0.5 / u_lutSize;
   emit(src, texture(u_lut, coord).rgb);
+}
+`
+
+/** Tints what a mask covers (painting feedback; no CPU counterpart). */
+export const OVERLAY = `${HEADER}${COMMON}
+uniform vec3 u_tint;
+uniform float u_tintAmount;
+void main() {
+  vec3 src = readSrc();
+  outColor = vec4(mix(src, u_tint, clamp(maskValue(src), 0.0, 1.0) * u_tintAmount), 1.0);
 }
 `
 

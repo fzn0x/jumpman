@@ -4,6 +4,7 @@ interface ParityResult {
   name: string
   max: number
   mean: number
+  effect: number
 }
 
 test('the WebGL2 renderer matches the CPU reference pipeline', async ({ page }) => {
@@ -20,5 +21,6 @@ test('the WebGL2 renderer matches the CPU reference pipeline', async ({ page }) 
     // Allow for float precision and 8/16-bit intermediate targets.
     expect.soft(r.mean, `${r.name}: mean difference`).toBeLessThan(1.5)
     expect.soft(r.max, `${r.name}: max difference`).toBeLessThanOrEqual(8)
+    if (r.name !== 'identity') expect.soft(r.effect, `${r.name}: changes pixels`).toBeGreaterThan(1)
   }
 })

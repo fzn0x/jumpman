@@ -60,8 +60,27 @@ export interface LutParams {
   lutId: string
 }
 
+/** One painted stroke of a brush mask. */
+export interface BrushStroke {
+  /** Paint adds coverage, erase removes it. */
+  mode: 'paint' | 'erase'
+  /** Brush radius as a fraction of the photo's shorter side, so dabs stay round. */
+  size: number
+  /** 0..1 portion of the radius that fades out. */
+  feather: number
+  /** 0..1 coverage one stroke adds (paint) or removes (erase). Strokes build up. */
+  flow: number
+  /**
+   * Flat x,y pairs normalized to the source photo, before crop, rotation and
+   * flip, so the mask sticks to the content when the framing changes.
+   */
+  points: number[]
+}
+
 export type Mask =
   | { type: 'linear'; x0: number; y0: number; x1: number; y1: number; invert?: boolean }
+  /** Painted coverage, rasterized per photo in source-image space. */
+  | { type: 'brush'; strokes: BrushStroke[]; invert?: boolean }
   | {
       type: 'radial'
       cx: number
@@ -88,6 +107,8 @@ export type Mask =
   | { type: 'subject'; size: number; invert?: boolean }
 
 export type MaskType = Mask['type']
+export type MaskOf<T extends MaskType> = Extract<Mask, { type: T }>
+export type BrushMask = MaskOf<'brush'>
 
 interface LayerBase {
   id: string

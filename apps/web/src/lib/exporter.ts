@@ -134,6 +134,7 @@ export async function exportBatch(
       rotate: frame.rotate,
       flipH: frame.flipH,
       ...(photo.stats ? { subject: photo.stats.subject } : {}),
+      sourceSize: { width: photo.width, height: photo.height },
     })
     src.close()
     if (!ok) throw new Error('The GPU context was lost during export. Try a smaller size.')

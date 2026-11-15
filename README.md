@@ -74,7 +74,7 @@ drop, a carousel post. Jumpman treats the **batch** as the unit of work:
 | **Smart selection** | Select by visual similarity, the same moment (burst), a time range, scene type (landscape, portrait, foliage, night, architecture, golden light) or a color from the batch palette. |
 | **Per-photo override indicator** | See which photos deviate from the global edit and reset them with one tap. |
 | **Batch before/after grid** | Before, after or side by side for the whole selection. |
-| **Masks & local adjustments** | Radial, linear, brightness range and color range masks, plus sky and subject masks that adapt to each photo. Any layer can be masked. |
+| **Masks & local adjustments** | Radial, linear, brush, brightness range and color range masks, plus sky and subject masks that adapt to each photo. Brush masks paint and erase with size, feather and flow, and stay put when you crop or rotate. Any layer can be masked. |
 | **Bulk crop** | 1:1, 4:5, 3:4, 9:16, 2:3, 16:9 and more for the whole set, with per-photo reposition, zoom, rotate and flip. |
 | **Batch export** | Resize, JPEG/PNG/WebP/AVIF, quality, watermark, filename patterns (`{collection}-{n:3}`), ZIP download, save to a folder, or the share sheet. Saves to Documents/Jumpman on Android. |
 | **Non-destructive history** | Per-batch undo/redo that survives reloads, and revert-to-original for a batch or a whole collection. |
@@ -103,7 +103,7 @@ drop, a carousel post. Jumpman treats the **batch** as the unit of work:
 
 - End-to-end encrypted cloud sync across devices
 - Real-time collaboration
-- On-device AI segmentation masks and brush masks
+- On-device AI segmentation masks
 - Full RAW decoding (LibRaw in WebAssembly)
 - Publishing presets to the community gallery from inside the app
 
@@ -178,7 +178,7 @@ Release builds are signed in CI from repository secrets (`ANDROID_KEYSTORE_BASE6
 6. **⋯ → Export…** to save a ZIP, or **⋯ → Instagram preview** to plan a grid.
 
 Keyboard: `←`/`→` switch photos, `G` toggles Global/Individual, hold `\` for the original,
-`Ctrl/⌘ Z` undo, `?` shows all shortcuts.
+`Ctrl/⌘ Z` undo, `[`/`]` brush size, `X` paint or erase, `?` shows all shortcuts.
 
 ## File formats
 

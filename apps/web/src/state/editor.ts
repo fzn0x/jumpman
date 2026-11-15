@@ -13,6 +13,18 @@ export type ColorTool = 'hsl' | 'curves' | 'split'
 export type CurveChannel = 'master' | 'red' | 'green' | 'blue'
 export type Sheet = null | 'branches' | 'export' | 'macros' | 'review' | 'describe' | 'shortcuts'
 
+/** Brush settings for the next stroke. Sizes are fractions of the photo's shorter side. */
+export interface BrushSettings {
+  mode: 'paint' | 'erase'
+  size: number
+  feather: number
+  flow: number
+  /** Tint the painted area while painting. */
+  overlay: boolean
+}
+
+export const BRUSH_SIZES = { min: 0.005, max: 0.3 } as const
+
 export interface EditorState {
   index: number
   mode: 'global' | 'individual'
@@ -23,8 +35,9 @@ export interface EditorState {
   curveChannel: CurveChannel
   /** Layer that sliders write to. */
   layerId: string
-  /** Layer whose mask is being edited. */
+  /** Layer whose mask is being edited (painted, for brush masks). */
   maskLayerId: string | null
+  brush: BrushSettings
   compare: 'off' | 'hold' | 'split'
   splitPos: number
   clipboard: { layers: Layer[]; from: string } | null
@@ -45,6 +58,7 @@ export const useEditor = create<EditorState>(() => ({
   curveChannel: 'master',
   layerId: BASE_LAYER_ID,
   maskLayerId: null,
+  brush: { mode: 'paint', size: 0.06, feather: 0.6, flow: 1, overlay: false },
   compare: 'off',
   splitPos: 0.5,
   clipboard: null,
@@ -67,6 +81,15 @@ export const editor = {
       sheet: null,
       gridSelection: [],
     })
+  },
+  setBrush(patch: Partial<BrushSettings>) {
+    useEditor.setState((s) => ({ brush: { ...s.brush, ...patch } }))
+  },
+  /** Scales the brush size, e.g. 1.25 for larger. */
+  scaleBrush(factor: number) {
+    const { size } = useEditor.getState().brush
+    const next = Math.min(BRUSH_SIZES.max, Math.max(BRUSH_SIZES.min, size * factor))
+    editor.setBrush({ size: Math.round(next * 1000) / 1000 })
   },
   record(step: MacroStep) {
     const r = useEditor.getState().recording

@@ -17,6 +17,7 @@ import {
 import { lazy, type ReactNode, Suspense, useEffect } from 'react'
 import { TopBar } from '../components/Chrome.tsx'
 import { AdjustPanel } from '../editor/AdjustPanel.tsx'
+import { brushTarget } from '../editor/Brush.tsx'
 import { type BatchContext, useBatchContext } from '../editor/context.ts'
 import { EditorMenu } from '../editor/EditorMenu.tsx'
 import { PhotoDots } from '../editor/PhotoDots.tsx'
@@ -98,6 +99,16 @@ function useShortcuts(ctx: BatchContext | null) {
       else if (e.key.toLowerCase() === 'g' && !mod)
         editor.set({ mode: editor.get().mode === 'global' ? 'individual' : 'global' })
       else if (e.key === '?') editor.set({ sheet: 'shortcuts' })
+      else if (!mod && brushTarget(ctx, editor.get().maskLayerId)) {
+        // Brush keys only while a brush mask is being painted.
+        const k = e.key.toLowerCase()
+        if (k === '[') editor.scaleBrush(1 / 1.25)
+        else if (k === ']') editor.scaleBrush(1.25)
+        else if (k === 'x')
+          editor.setBrush({ mode: editor.get().brush.mode === 'paint' ? 'erase' : 'paint' })
+        else return
+        e.preventDefault()
+      }
     }
     const onUp = (e: KeyboardEvent) => {
       if (e.key === '\\') editor.set({ compare: 'off' })

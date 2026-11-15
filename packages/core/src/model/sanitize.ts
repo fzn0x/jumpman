@@ -3,9 +3,11 @@
  * community presets, review bundles). Everything is rebuilt from defaults so
  * unknown keys are dropped and numbers are clamped.
  */
+import { BRUSH_LIMITS, quantizeBrushValue } from '../mask/brush.ts'
 import { clamp } from '../util.ts'
 import { BASIC_KEYS, type Basic, clampBasicValue, defaultBasic } from './basic.ts'
 import {
+  type BrushStroke,
   type CurvePoint,
   createLayer,
   defaultCurves,
@@ -49,6 +51,41 @@ function sanitizeCurve(v: unknown): CurvePoint[] {
   return pts.length >= 2 ? pts : defaultCurves().master
 }
 
+const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
+
+/**
+ * Brush strokes within BRUSH_LIMITS: settings clamped, coordinates quantized,
+ * non-finite pairs and empty strokes dropped, points capped across strokes.
+ */
+export function sanitizeBrushStrokes(v: unknown): BrushStroke[] {
+  if (!Array.isArray(v)) return []
+  const out: BrushStroke[] = []
+  let budget = BRUSH_LIMITS.maxPoints
+  for (const s of v.slice(0, BRUSH_LIMITS.maxStrokes)) {
+    if (budget <= 0) break
+    if (!isObj(s) || !Array.isArray(s.points)) continue
+    const raw: unknown[] = s.points
+    const points: number[] = []
+    const scan = Math.min(raw.length - 1, budget * 4)
+    for (let i = 0; i < scan && points.length < budget * 2; i += 2) {
+      const x = raw[i]
+      const y = raw[i + 1]
+      if (!finite(x) || !finite(y)) continue
+      points.push(quantizeBrushValue(clamp(x, -1, 2)), quantizeBrushValue(clamp(y, -1, 2)))
+    }
+    if (!points.length) continue
+    budget -= points.length / 2
+    out.push({
+      mode: s.mode === 'erase' ? 'erase' : 'paint',
+      size: quantizeBrushValue(num(s.size, BRUSH_LIMITS.minSize, BRUSH_LIMITS.maxSize, 0.05)),
+      feather: quantizeBrushValue(num(s.feather, 0, 1, 0.5)),
+      flow: quantizeBrushValue(num(s.flow, BRUSH_LIMITS.minFlow, 1, 1)),
+      points,
+    })
+  }
+  return out
+}
+
 export function sanitizeMask(v: unknown): Mask | undefined {
   if (!isObj(v)) return undefined
   const invert = v.invert === true
@@ -89,6 +126,8 @@ export function sanitizeMask(v: unknown): Mask | undefined {
         feather: num(v.feather, 0, 1, 0.5),
         ...extra,
       }
+    case 'brush':
+      return { type: 'brush', strokes: sanitizeBrushStrokes(v.strokes), ...extra }
     case 'sky':
       return { type: 'sky', ...extra }
     case 'subject':

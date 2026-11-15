@@ -9,6 +9,7 @@ import { editor, useEditor } from '../state/editor.ts'
 import { commit, dispatch, useLibrary } from '../state/library.ts'
 import { layersFor } from '../state/selectors.ts'
 import { cx } from '../ui/primitives.tsx'
+import { BrushPainter } from './Brush.tsx'
 import { type BatchContext, findLayer, run } from './context.ts'
 import { Histogram, useHistogram } from './Histogram.tsx'
 
@@ -30,6 +31,7 @@ export function Viewport({ ctx }: { ctx: BatchContext }) {
   const compare = useEditor((s) => s.compare)
   const splitPos = useEditor((s) => s.splitPos)
   const maskLayerId = useEditor((s) => s.maskLayerId)
+  const overlay = useEditor((s) => s.brush.overlay)
   const tabRef = useRef(tab)
   tabRef.current = tab
   const photo = ctx.current
@@ -83,7 +85,19 @@ export function Viewport({ ctx }: { ctx: BatchContext }) {
     }
   }, [photo?.id])
 
-  const renderKey = JSON.stringify([layers, frame, view, compare, splitPos, imageReady, lutVersion])
+  const mask = maskLayerId ? findLayer(ctx, maskLayerId)?.layer.mask : undefined
+  // Tint the painted area while a brush mask is being painted.
+  const maskOverlay = overlay && mask?.type === 'brush' ? mask : undefined
+  const renderKey = JSON.stringify([
+    layers,
+    frame,
+    view,
+    compare,
+    splitPos,
+    imageReady,
+    lutVersion,
+    maskOverlay,
+  ])
   // biome-ignore lint/correctness/useExhaustiveDependencies: renderKey captures every render input
   useEffect(() => {
     const r = renderer.current
@@ -98,6 +112,8 @@ export function Viewport({ ctx }: { ctx: BatchContext }) {
         rotate: frame.rotate,
         flipH: frame.flipH,
         ...(photo.stats ? { subject: photo.stats.subject } : {}),
+        sourceSize: { width: photo.width, height: photo.height },
+        ...(maskOverlay ? { maskOverlay, overlayColor: [0.88, 0, 0] } : {}),
         showOriginal: compare === 'hold',
         split: compare === 'split' ? splitPos : 0,
       })
@@ -114,8 +130,6 @@ export function Viewport({ ctx }: { ctx: BatchContext }) {
     const next = ctx.index + delta
     if (next >= 0 && next < ctx.photos.length) editor.set({ index: next })
   }
-
-  const mask = maskLayerId ? findLayer(ctx, maskLayerId)?.layer.mask : undefined
 
   return (
     <div
@@ -147,6 +161,9 @@ export function Viewport({ ctx }: { ctx: BatchContext }) {
           <div className="pointer-events-none absolute top-2 left-2 opacity-90 lg:hidden">
             <Histogram className="h-9 w-24 rounded-lg" />
           </div>
+        )}
+        {!cropping && view && frame && mask?.type === 'brush' && (
+          <BrushPainter ctx={ctx} frame={frame} w={view.cssW} />
         )}
         {compare === 'split' && view && <SplitHandle width={view.cssW} />}
         {cropping && view && photo && <CropOverlay ctx={ctx} w={view.cssW} h={view.cssH} />}
