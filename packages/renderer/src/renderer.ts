@@ -1,5 +1,6 @@
 import {
   curvesTable,
+  type FrameGeometry,
   GRAIN_CELLS,
   HUE_BAND_CENTERS,
   HUE_BANDS,
@@ -9,19 +10,17 @@ import {
   type LutResolver,
   luma,
   type Mask,
+  type MaskRaster,
+  type MaskRasterResolver,
+  resolveMaskRaster,
+  type SourceSize,
   wbGains,
 } from '@jumpman/core'
 import { BASIC, CURVES, DISPLAY, GEOMETRY, HSL, LUT, SPLIT, VERTEX } from './shaders.ts'
 
-type GL = WebGL2RenderingContext
+export type { FrameGeometry }
 
-export interface FrameGeometry {
-  /** Crop window, normalized to the rotated image (0..1). Defaults to the full image. */
-  rect?: { x: number; y: number; w: number; h: number }
-  /** Quarter turns clockwise. */
-  rotate?: number
-  flipH?: boolean
-}
+type GL = WebGL2RenderingContext
 
 export interface RenderOptions extends FrameGeometry {
   layers: Layer[]
@@ -36,6 +35,18 @@ export interface RenderOptions extends FrameGeometry {
   showOriginal?: boolean
   /** 0..1 position of a before/after divider; 0 disables it. */
   split?: number
+  /**
+   * Full-resolution size of the photo. Sets the resolution of raster masks so
+   * previews, thumbnails and exports share them. Defaults to the uploaded image.
+   */
+  sourceSize?: SourceSize
+  /**
+   * Per-photo mask rasters in source-image space (before crop, rotation and
+   * flip). Called for every masked layer; a returned raster is uploaded once
+   * per `key` and replaces the analytic mask. Brush masks are rasterized when
+   * this returns nothing.
+   */
+  maskRaster?: MaskRasterResolver
 }
 
 export interface Histogram {
@@ -56,6 +67,9 @@ interface Target {
 /** Above this many pixels, intermediate targets fall back to 8-bit (4 targets × 8 B/px adds up). */
 const FLOAT_TARGET_MAX_PIXELS = 12_000_000
 
+/** Shader mask id for "sample u_maskTex in source space". */
+const RASTER_MASK = 7
+
 const MASK_TYPES: Record<Mask['type'], number> = {
   linear: 1,
   radial: 2,
@@ -63,6 +77,23 @@ const MASK_TYPES: Record<Mask['type'], number> = {
   color: 4,
   sky: 5,
   subject: 6,
+  brush: RASTER_MASK,
+}
+
+/** Texture unit raster masks are bound to (0 source, 1 curve, 2 LUT). */
+const MASK_UNIT = 3
+/** Raster mask textures kept on the GPU; the least recently used goes first. */
+const MASK_TEXTURE_LIMIT = 8
+
+interface PassContext {
+  rect: [number, number, number, number]
+  imgAspect: number
+  frameAspect: number
+  subject: { x: number; y: number }
+  rotate: number
+  flipH: boolean
+  source: SourceSize
+  rasters: MaskRasterResolver | undefined
 }
 
 function bump(arr: Uint32Array, v: number) {
@@ -155,6 +186,8 @@ export class GLRenderer {
   private imageKey: string | null = null
   private imageSize = { w: 0, h: 0 }
   private lutTextures = new Map<Lut3D, WebGLTexture>()
+  /** Raster mask uploads by content key, least recently used first. */
+  private maskTextures = new Map<string, WebGLTexture>()
   private curveTex: WebGLTexture | null = null
   /** Indexed by slot (0 original, 1-2 ping-pong, 3 readback); unused slots stay empty. */
   private targets: (Target | undefined)[] = []
@@ -207,6 +240,7 @@ export class GLRenderer {
     this.lost = false
     this.programs.clear()
     this.lutTextures = new Map()
+    this.maskTextures = new Map()
     this.targets = []
     this.image = null
     this.imageKey = null
@@ -320,6 +354,34 @@ export class GLRenderer {
     return tex as WebGLTexture
   }
 
+  /** Uploads a raster mask once per content key (single channel, linear filtering). */
+  private maskTexture(r: MaskRaster): WebGLTexture {
+    const hit = this.maskTextures.get(r.key)
+    if (hit) {
+      this.maskTextures.delete(r.key)
+      this.maskTextures.set(r.key, hit)
+      return hit
+    }
+    const gl = this.gl
+    const tex = gl.createTexture() as WebGLTexture
+    gl.activeTexture(gl.TEXTURE0 + MASK_UNIT)
+    gl.bindTexture(gl.TEXTURE_2D, tex)
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, r.width, r.height, 0, gl.RED, gl.UNSIGNED_BYTE, r.data)
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    this.maskTextures.set(r.key, tex)
+    while (this.maskTextures.size > MASK_TEXTURE_LIMIT) {
+      const [key, old] = this.maskTextures.entries().next().value as [string, WebGLTexture]
+      this.maskTextures.delete(key)
+      gl.deleteTexture(old)
+    }
+    return tex
+  }
+
   private curveTexture(table: Float32Array): WebGLTexture {
     const gl = this.gl
     if (!this.curveTex) {
@@ -349,28 +411,28 @@ export class GLRenderer {
     gl.bindTexture(kind, tex)
   }
 
-  private setCommon(
-    p: Program,
-    layer: Layer,
-    ctx: {
-      rect: [number, number, number, number]
-      imgAspect: number
-      frameAspect: number
-      subject: { x: number; y: number }
-    },
-  ) {
+  private setCommon(p: Program, m: Mask | undefined, opacity: number, ctx: PassContext) {
     p.i('u_src', 0)
       .v4('u_uvRect', ...ctx.rect)
       .f('u_imgAspect', ctx.imgAspect)
       .f('u_frameAspect', ctx.frameAspect)
-      .f('u_opacity', layer.opacity)
+      .f('u_opacity', opacity)
       .v2('u_subject', ctx.subject.x, ctx.subject.y)
-    const m = layer.mask
+      .i('u_rotate', ctx.rotate)
+      .i('u_flip', ctx.flipH ? 1 : 0)
+      .i('u_maskTex', MASK_UNIT)
     if (!m) {
       p.i('u_maskType', 0)
       return
     }
-    p.i('u_maskType', MASK_TYPES[m.type]).i('u_maskInvert', m.invert ? 1 : 0)
+    p.i('u_maskInvert', m.invert ? 1 : 0)
+    const raster = resolveMaskRaster(m, ctx.source, ctx.rasters)
+    if (raster) {
+      this.bindTexture(MASK_UNIT, this.maskTexture(raster))
+      p.i('u_maskType', RASTER_MASK)
+      return
+    }
+    p.i('u_maskType', MASK_TYPES[m.type])
     switch (m.type) {
       case 'linear':
         p.v4('u_maskA', m.x0, m.y0, m.x1, m.y1)
@@ -404,11 +466,15 @@ export class GLRenderer {
     const rotate = (((opts.rotate ?? 0) % 4) + 4) % 4
     const iw = rotate % 2 ? this.imageSize.h : this.imageSize.w
     const ih = rotate % 2 ? this.imageSize.w : this.imageSize.h
-    const ctx = {
+    const ctx: PassContext = {
       rect,
       imgAspect: iw / Math.max(1, ih),
       frameAspect: w / h,
       subject: opts.subject ?? { x: 0.5, y: 0.5 },
+      rotate,
+      flipH: !!opts.flipH,
+      source: opts.sourceSize ?? { width: this.imageSize.w, height: this.imageSize.h },
+      rasters: opts.maskRaster,
     }
 
     // Pass 0: geometry into the "original" target.
@@ -447,7 +513,7 @@ export class GLRenderer {
     layer: Layer,
     input: Target,
     out: Target,
-    ctx: Parameters<GLRenderer['setCommon']>[2],
+    ctx: PassContext,
     opts: RenderOptions,
   ): boolean {
     let p: Program
@@ -519,7 +585,7 @@ export class GLRenderer {
         break
       }
     }
-    this.setCommon(p, layer, ctx)
+    this.setCommon(p, layer.mask, layer.opacity, ctx)
     this.bindTexture(0, input.tex)
     this.draw(out, out.w, out.h)
     return true
@@ -583,10 +649,12 @@ export class GLRenderer {
       gl.deleteTexture(t.tex)
     }
     for (const t of this.lutTextures.values()) gl.deleteTexture(t)
+    for (const t of this.maskTextures.values()) gl.deleteTexture(t)
     if (this.image) gl.deleteTexture(this.image)
     if (this.curveTex) gl.deleteTexture(this.curveTex)
     this.targets = []
     this.lutTextures.clear()
+    this.maskTextures.clear()
     this.image = null
     this.imageKey = null
     this.curveTex = null
