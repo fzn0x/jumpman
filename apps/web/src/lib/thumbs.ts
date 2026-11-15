@@ -4,7 +4,7 @@ import type { FrameSpec } from './geometry.ts'
 import { fit } from './image.ts'
 import { resolveLut } from './luts.ts'
 import { previewBitmap, thumbBitmap } from './media.ts'
-import { ensureSubjectMask, subjectRaster, subjectResolver, usesSubjectMask } from './segment.ts'
+import { ensureSegments, segmentKey, segmentResolver } from './segment.ts'
 import type { Photo } from './types.ts'
 
 let renderer: GLRenderer | null = null
@@ -32,7 +32,7 @@ export function invalidateThumbs(): void {
 
 /**
  * Renders an edited thumbnail off-screen. Calls are queued on one GPU context.
- * Photos with subject masks wait for their segmentation first.
+ * Photos with sky or subject masks wait for their segmentation first.
  */
 export async function renderEdited(
   photo: Photo,
@@ -41,7 +41,7 @@ export async function renderEdited(
   maxEdge: number,
   opts: { original?: boolean } = {},
 ): Promise<ImageBitmap | null> {
-  if (!opts.original && usesSubjectMask(layers)) await ensureSubjectMask(photo)
+  if (!opts.original) await ensureSegments(photo, layers)
   return renderNow(photo, layers, frame, maxEdge, opts)
 }
 
@@ -52,9 +52,7 @@ function renderNow(
   maxEdge: number,
   opts: { original?: boolean } = {},
 ): Promise<ImageBitmap | null> {
-  const edits = opts.original
-    ? ''
-    : `${JSON.stringify(layers)}|${subjectRaster(photo.id)?.key ?? ''}`
+  const edits = opts.original ? '' : `${JSON.stringify(layers)}|${segmentKey(photo.id)}`
   const key = `${generation}|${photo.id}|${maxEdge}|${opts.original ? 'o' : ''}|${JSON.stringify(frame.rect)}${frame.rotate}${frame.flipH}|${edits}`
   const hit = cache.get(key)
   if (hit) {
@@ -66,7 +64,7 @@ function renderNow(
     const again = cache.get(key)
     if (again) return again
     const src = maxEdge > 480 ? await previewBitmap(photo) : await thumbBitmap(photo)
-    const subject = opts.original ? undefined : subjectResolver(photo.id)
+    const segments = opts.original ? undefined : segmentResolver(photo.id)
     const r = getRenderer()
     if (!src || !r) return null
     r.setImage(src, `${photo.id}@${maxEdge > 480 ? 'p' : 't'}`)
@@ -81,7 +79,7 @@ function renderNow(
       flipH: frame.flipH,
       ...(photo.stats ? { subject: photo.stats.subject } : {}),
       sourceSize: { width: photo.width, height: photo.height },
-      ...(subject ? { maskRaster: subject } : {}),
+      ...(segments ? { maskRaster: segments } : {}),
     })
     if (!ok) return null
     const bmp = (r.canvas as OffscreenCanvas).transferToImageBitmap()
