@@ -25,7 +25,7 @@ const RAW_DECODERS: { value: RawDecoder; label: string; description: string }[] 
     value: 'libraw',
     label: 'Full quality (LibRaw)',
     description:
-      'Decodes the sensor data with LibRaw for full resolution and color. Takes a few seconds per photo and more memory.',
+      'Decodes the sensor data with LibRaw for full resolution and color. Takes a few seconds per photo and more memory. Files LibRaw cannot read open from their preview.',
   },
   {
     value: 'preview',
@@ -86,7 +86,7 @@ export function SettingsScreen() {
         </fieldset>
         <p className="mt-2 text-xs leading-relaxed text-mute">
           {RAW_DECODERS.find((d) => d.value === settings.rawDecoder)?.description} Applies to RAW
-          files you import from now on. If a file cannot be decoded, Jumpman uses its preview.
+          files you import from now on.
         </p>
 
         <SectionTitle>Storage</SectionTitle>
