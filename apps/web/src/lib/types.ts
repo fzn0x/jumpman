@@ -64,6 +64,8 @@ export type RawDecoder = 'libraw' | 'preview'
 
 export interface Settings {
   author: string
+  /** Subject masks from the on-device segmentation model instead of the quick estimate. */
+  aiMasks: boolean
   exportFormat: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/avif'
   exportQuality: number
   exportMaxEdge: number

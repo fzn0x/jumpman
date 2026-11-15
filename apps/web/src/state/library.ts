@@ -58,6 +58,7 @@ export interface LibraryState {
 
 export const DEFAULT_SETTINGS: Settings = {
   author: '',
+  aiMasks: true,
   exportFormat: 'image/jpeg',
   exportQuality: 0.9,
   exportMaxEdge: 0,
