@@ -74,7 +74,7 @@ drop, a carousel post. Jumpman treats the **batch** as the unit of work:
 | **Smart selection** | Select by visual similarity, the same moment (burst), a time range, scene type (landscape, portrait, foliage, night, architecture, golden light) or a color from the batch palette. |
 | **Per-photo override indicator** | See which photos deviate from the global edit and reset them with one tap. |
 | **Batch before/after grid** | Before, after or side by side for the whole selection. |
-| **Masks & local adjustments** | Radial, linear, brush, brightness range and color range masks, plus sky and subject masks that adapt to each photo. Brush masks paint and erase with size, feather and flow, and stay put when you crop or rotate. Any layer can be masked. |
+| **Masks & local adjustments** | Radial, linear, brush, brightness range and color range masks, plus sky and subject masks that adapt to each photo. Subject masks come from an on-device segmentation model (MediaPipe MagicTouch), with a quick estimate as the fallback. Brush masks paint and erase with size, feather and flow, and stay put when you crop or rotate. Any layer can be masked. |
 | **Bulk crop** | 1:1, 4:5, 3:4, 9:16, 2:3, 16:9 and more for the whole set, with per-photo reposition, zoom, rotate and flip. |
 | **Batch export** | Resize, JPEG/PNG/WebP/AVIF, quality, watermark, filename patterns (`{collection}-{n:3}`), ZIP download, save to a folder, or the share sheet. Saves to Documents/Jumpman on Android. |
 | **Non-destructive history** | Per-batch undo/redo that survives reloads, and revert-to-original for a batch or a whole collection. |
@@ -103,7 +103,7 @@ drop, a carousel post. Jumpman treats the **batch** as the unit of work:
 
 - End-to-end encrypted cloud sync across devices
 - Real-time collaboration
-- On-device AI segmentation masks
+- On-device AI sky masks
 - Publishing presets to the community gallery from inside the app
 
 ## Install
@@ -216,7 +216,8 @@ center), which drives auto-match, consistency, smart selection and scene-aware e
 
 Jumpman has no backend. There are no accounts and no analytics, and nothing is uploaded. Photos and edits
 are stored in your browser's IndexedDB (or the app's storage on Android). The only network requests are
-loading the app itself and, if you open the Community tab, the public preset gallery.
+loading the app itself (including the subject segmentation model, which loads from the same site the first
+time you use a subject mask) and, if you open the Community tab, the public preset gallery.
 
 ## Contributing
 
@@ -234,6 +235,8 @@ with everyone, see [community/README.md](./community/README.md).
 - RAW decoding by [LibRaw](https://www.libraw.org) (LGPL-2.1 or CDDL-1.0) through the
   [libraw-wasm](https://github.com/ybouane/LibRaw-Wasm) bindings (ISC). See the
   [third-party notices](./THIRD_PARTY_NOTICES.md).
+- Subject masks by the [MediaPipe](https://ai.google.dev/edge/mediapipe) MagicTouch model and
+  `@mediapipe/tasks-vision` (both Apache-2.0).
 
 ## License
 
